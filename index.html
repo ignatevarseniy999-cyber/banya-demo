@@ -5,148 +5,180 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>Бронь бани</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f4f1ec; --card: #ffffff; --text: #1d1813; --hint: #8a8178; --line: rgba(29,24,19,.09);
-    --chip: #efebe5; --accent: #c8742b; --accent-soft: rgba(200,116,43,.12); --on-accent: #fff;
-    --busy: #e6e1da; --danger: #c2453d; --ok: #2f8a4c;
+    --bg: #f4efe7; --card: #fffdf9; --text: #1f1a15; --hint: #8a8075; --line: rgba(31,26,21,.10);
+    --chip: #efe8de; --accent: #b4652a; --accent-soft: rgba(180,101,42,.11); --on-accent: #fff;
+    --busy: #ebe4da; --ok: #4f7d4a; --shadow: 0 1px 2px rgba(31,26,21,.04), 0 6px 18px rgba(31,26,21,.05);
+    --serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  }
+  :root.dark {
+    --bg: #12100e; --card: #1b1815; --text: #efe7dd; --hint: #988e83; --line: rgba(255,255,255,.08);
+    --chip: #26211d; --busy: #221e1a; --accent-soft: rgba(214,138,74,.16); --shadow: none;
   }
   @media (prefers-color-scheme: dark) {
-    :root:not(.tg) { --bg: #12100e; --card: #1e1a17; --text: #f2ece5; --hint: #9a9087; --line: rgba(255,255,255,.08);
-      --chip: #2a2521; --busy: #2b2723; --accent-soft: rgba(200,116,43,.2); }
+    :root:not(.light):not(.tg) {
+      --bg: #12100e; --card: #1b1815; --text: #efe7dd; --hint: #988e83; --line: rgba(255,255,255,.08);
+      --chip: #26211d; --busy: #221e1a; --accent-soft: rgba(214,138,74,.16); --shadow: none;
+    }
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; background: var(--bg); color: var(--text); }
-  body { font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
-  body.has-bar { padding-bottom: 88px; }
+  body { font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  body.has-bar { padding-bottom: 92px; }
   button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
-  .wrap { max-width: 520px; margin: 0 auto; padding: 0 14px 24px; }
+  .wrap { max-width: 520px; margin: 0 auto; padding: 0 16px 28px; }
 
-  /* hero */
-  .hero { margin: 0 -14px; padding: 22px 18px 20px; color: #fff; position: relative; overflow: hidden;
-    background: radial-gradient(120% 140% at 100% 0%, rgba(255,255,255,.18), transparent 55%), linear-gradient(140deg, var(--accent), #5a2f17); }
-  .hero::after { content: ""; position: absolute; right: -30px; bottom: -40px; width: 180px; height: 180px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(255,255,255,.14), transparent 70%); }
-  .hero-top { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
-  .pill { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 99px; background: rgba(255,255,255,.18); backdrop-filter: blur(4px); }
-  .pill .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #7CF29A; margin-right: 6px; vertical-align: 1px; }
-  .hero h1 { font-size: 23px; line-height: 1.2; margin: 0 0 6px; letter-spacing: -.01em; }
-  .hero-sub { font-size: 13.5px; opacity: .85; }
-  .compact { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 2px 4px; }
-  .compact b { font-size: 15px; }
-  .compact span { font-size: 13px; color: var(--hint); text-align: right; }
+  /* ---------- hero: ночная сцена ---------- */
+  .hero { position: relative; margin: 0 -16px; height: 232px; overflow: hidden; color: #f6efe6; background: #0f1326; }
+  .scene { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .steam path { animation: rise 7s ease-in-out infinite; transform-box: fill-box; transform-origin: bottom; opacity: 0; }
+  .steam path:nth-child(2) { animation-delay: 2.3s; }
+  .steam path:nth-child(3) { animation-delay: 4.6s; }
+  @keyframes rise { 0% { opacity: 0; transform: translateY(6px) scaleY(.85); } 30% { opacity: .55; } 100% { opacity: 0; transform: translateY(-16px) scaleY(1.1); } }
+  .twinkle { animation: twinkle 4s ease-in-out infinite; }
+  @keyframes twinkle { 50% { opacity: .25; } }
+  .hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(12,10,14,.72) 0%, rgba(12,10,14,.25) 62%, transparent 100%); }
+  .hero-in { position: absolute; left: 20px; right: 20px; bottom: 20px; z-index: 1; max-width: 66%; }
+  .eyebrow { font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; opacity: .82; margin-bottom: 8px; }
+  .eyebrow .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #8fe0a2; margin-right: 7px; vertical-align: 2px; box-shadow: 0 0 0 3px rgba(143,224,162,.18); }
+  .hero h1 { font-family: var(--serif); font-weight: 600; font-size: 31px; line-height: 1.02; margin: 0 0 8px; letter-spacing: .005em; }
+  .hero-sub { font-size: 13px; opacity: .78; }
+  .hero-sub .star { color: #f0b46a; }
+  .compact { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 18px 2px 2px; }
+  .compact b { font-family: var(--serif); font-size: 21px; font-weight: 600; }
+  .compact span { font-size: 12.5px; color: var(--hint); text-align: right; }
 
-  /* progress */
-  .progress { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 14px 0 6px; }
-  .progress div { font-size: 11.5px; color: var(--hint); }
-  .progress div::before { content: ""; display: block; height: 4px; border-radius: 4px; background: var(--line); margin-bottom: 6px; }
-  .progress .on { color: var(--text); font-weight: 600; }
-  .progress .on::before, .progress .past::before { background: var(--accent); }
+  /* ---------- шаги ---------- */
+  .progress { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 16px 0 4px; }
+  .progress div { font-size: 12px; color: var(--hint); padding-top: 8px; border-top: 2px solid var(--line); transition: .25s; }
+  .progress i { font-style: normal; font-family: var(--serif); font-size: 14px; font-weight: 700; margin-right: 4px; }
+  .progress .on { color: var(--text); border-color: var(--accent); font-weight: 600; }
+  .progress .on i, .progress .past i { color: var(--accent); }
+  .progress .past { border-color: var(--accent); opacity: .75; }
 
-  h2 { font-size: 19px; margin: 18px 2px 10px; letter-spacing: -.01em; }
-  h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--hint); margin: 20px 4px 8px; font-weight: 600; }
-  .card { background: var(--card); border-radius: 16px; border: 1px solid var(--line); }
+  h2 { font-family: var(--serif); font-weight: 600; font-size: 27px; line-height: 1.1; margin: 22px 2px 14px; }
+  h3 { font-size: 11.5px; text-transform: uppercase; letter-spacing: .12em; color: var(--hint); margin: 24px 4px 10px; font-weight: 600; }
+  .card { background: var(--card); border-radius: 16px; border: 1px solid var(--line); box-shadow: var(--shadow); }
 
-  /* halls */
-  .hall { display: block; width: 100%; text-align: left; margin-bottom: 12px; overflow: hidden; transition: transform .12s, box-shadow .12s; }
+  /* ---------- залы ---------- */
+  .hall { position: relative; display: flex; width: 100%; text-align: left; margin-bottom: 12px; overflow: hidden; transition: transform .15s, border-color .2s; }
   .hall:active { transform: scale(.985); }
-  .hall.sel { box-shadow: 0 0 0 2px var(--accent); border-color: transparent; }
-  .hall-top { height: 92px; padding: 14px; color: #fff; display: flex; flex-direction: column; justify-content: space-between; position: relative;
-    background-size: cover; background-position: center; }
-  .hall-top .cap { align-self: flex-start; font-size: 12px; font-weight: 600; background: rgba(0,0,0,.28); padding: 3px 9px; border-radius: 99px; }
-  .hall-top b { font-size: 18px; text-shadow: 0 1px 8px rgba(0,0,0,.25); }
-  .hall-check { position: absolute; right: 12px; top: 12px; width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(255,255,255,.8);
-    display: grid; place-items: center; font-size: 15px; font-weight: 700; }
-  .hall.sel .hall-check { background: #fff; color: var(--accent); border-color: #fff; }
-  .hall-body { padding: 12px 14px 14px; }
-  .hall-body ul { margin: 0 0 10px; padding: 0; list-style: none; font-size: 13.5px; color: var(--hint); }
-  .hall-body li { padding-left: 16px; position: relative; margin: 2px 0; }
-  .hall-body li::before { content: ""; position: absolute; left: 3px; top: 8px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
-  .hall-price { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--hint); }
-  .hall-price b { font-size: 17px; color: var(--text); }
+  .hall.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), var(--shadow); }
+  .hall-art { flex: 0 0 86px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #f6efe6; position: relative;
+    background: radial-gradient(90% 70% at 50% 100%, rgba(255,190,110,.35), transparent 70%), linear-gradient(170deg, var(--tone), #17110d); background-size: cover; background-position: center; }
+  .hall-art b { font-family: var(--serif); font-size: 32px; font-weight: 600; line-height: 1; }
+  .hall-art small { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; opacity: .8; margin-top: 3px; }
+  .hall-main { flex: 1; padding: 14px 40px 14px 15px; min-width: 0; }
+  .hall-name { font-family: var(--serif); font-size: 21px; font-weight: 600; line-height: 1.12; margin-bottom: 6px; }
+  .hall-feat { font-size: 12.8px; color: var(--hint); line-height: 1.45; margin-bottom: 12px; }
+  .hall-foot { display: flex; justify-content: space-between; align-items: baseline; font-size: 12.5px; color: var(--hint); border-top: 1px dashed var(--line); padding-top: 10px; }
+  .hall-foot b { font-size: 16px; color: var(--text); font-weight: 650; }
+  .hall-check { position: absolute; right: 13px; top: 13px; width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; font-size: 12px; color: #fff; transition: .2s; }
+  .hall.sel .hall-check { background: var(--accent); border-color: var(--accent); }
 
-  /* dates */
-  .dates { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; margin: 0 -14px; padding-left: 14px; padding-right: 14px; scrollbar-width: none; }
+  /* ---------- даты ---------- */
+  .dates { display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px; padding: 2px 16px 6px; scrollbar-width: none; }
   .dates::-webkit-scrollbar { display: none; }
-  .date { flex: 0 0 56px; padding: 8px 0 9px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); text-align: center; }
-  .date small { display: block; font-size: 11.5px; color: var(--hint); text-transform: capitalize; }
-  .date b { display: block; font-size: 19px; margin: 1px 0; }
+  .date { flex: 0 0 58px; padding: 9px 0 10px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); text-align: center; transition: .2s; }
+  .date small { display: block; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--hint); }
+  .date b { display: block; font-family: var(--serif); font-size: 25px; font-weight: 600; line-height: 1.1; margin-top: 2px; }
   .date.we small { color: var(--accent); }
-  .date.sel { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-  .date.sel small { color: rgba(255,255,255,.85); }
+  .date.sel { background: var(--text); border-color: var(--text); color: var(--bg); }
+  .date.sel small { color: var(--bg); opacity: .7; }
 
-  /* steppers */
+  /* ---------- степперы ---------- */
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .stepbox { padding: 12px; }
-  .stepbox .lbl { font-size: 12.5px; color: var(--hint); margin-bottom: 8px; }
+  .stepbox { padding: 12px 12px 13px; }
+  .stepbox .lbl { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--hint); margin-bottom: 9px; }
   .stepper { display: flex; align-items: center; justify-content: space-between; }
-  .stepper button { width: 34px; height: 34px; border-radius: 10px; background: var(--chip); font-size: 20px; line-height: 1; display: grid; place-items: center; }
-  .stepper button:disabled { opacity: .35; cursor: default; }
-  .stepper b { font-size: 17px; min-width: 44px; text-align: center; }
-  .note { font-size: 12.5px; color: var(--hint); margin: 8px 4px 0; }
+  .stepper button { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); font-size: 18px; line-height: 1; display: grid; place-items: center; transition: .15s; }
+  .stepper button:active { background: var(--chip); }
+  .stepper button:disabled { opacity: .3; cursor: default; }
+  .stepper b { font-family: var(--serif); font-size: 24px; font-weight: 600; min-width: 44px; text-align: center; }
+  .note { font-size: 12.5px; color: var(--hint); margin: 9px 4px 0; }
 
-  /* slots */
-  .slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .slot { height: 44px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); font-weight: 600; font-size: 14.5px; }
-  .slot.busy { background: var(--busy); color: var(--hint); text-decoration: line-through; border-color: transparent; font-weight: 500; }
-  .slot.nofit { color: var(--hint); font-weight: 500; }
+  /* ---------- время ---------- */
+  .slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+  .slot { height: 44px; border-radius: 11px; background: var(--card); border: 1px solid var(--line); font-weight: 600; font-size: 14.5px; font-variant-numeric: tabular-nums; transition: .15s; }
+  .slot.busy { background: transparent; border-style: dashed; color: var(--hint); opacity: .55; font-weight: 400; text-decoration: line-through; text-decoration-color: rgba(138,128,117,.5); }
+  .slot.nofit { color: var(--hint); font-weight: 400; }
   .slot.in { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
   .slot.first, .slot.last { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
-  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--hint); margin: 10px 4px 0; flex-wrap: wrap; }
-  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
-  .pricebar { margin-top: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13.5px; }
-  .pricebar b { font-size: 16px; white-space: nowrap; }
-  .empty { padding: 18px; text-align: center; color: var(--hint); font-size: 14px; }
+  .legend { display: flex; gap: 16px; font-size: 11.5px; color: var(--hint); margin: 11px 4px 0; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 6px; vertical-align: 0; }
+  .pricebar { margin-top: 14px; padding: 13px 15px; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13.5px; color: var(--hint); }
+  .pricebar b { font-family: var(--serif); font-size: 22px; font-weight: 600; color: var(--text); white-space: nowrap; }
+  .empty { padding: 20px; text-align: center; color: var(--hint); font-size: 14px; }
 
-  /* extras */
-  .extra { display: flex; align-items: center; gap: 12px; padding: 13px 14px; border-top: 1px solid var(--line); }
+  /* ---------- допы ---------- */
+  .extra { display: flex; align-items: center; gap: 12px; padding: 14px 15px; border-top: 1px solid var(--line); }
   .extra:first-child { border-top: 0; }
   .extra .info { flex: 1; min-width: 0; }
   .extra .info b { display: block; font-size: 15px; font-weight: 600; }
   .extra .info small { display: block; font-size: 12.5px; color: var(--hint); margin-top: 1px; }
-  .extra .info .pr { font-size: 13px; color: var(--text); margin-top: 3px; }
-  .add { height: 34px; padding: 0 14px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 14px; white-space: nowrap; }
+  .extra .info .pr { font-size: 13px; color: var(--accent); margin-top: 4px; font-weight: 600; }
+  .add { height: 34px; padding: 0 15px; border-radius: 99px; border: 1px solid var(--accent); color: var(--accent); font-weight: 600; font-size: 13.5px; white-space: nowrap; }
+  .add:active { background: var(--accent-soft); }
   .extra .stepper { gap: 4px; }
-  .extra .stepper b { min-width: 26px; font-size: 15px; }
+  .extra .stepper b { min-width: 26px; font-size: 20px; }
 
-  /* form */
-  .field { display: block; padding: 10px 14px; border-top: 1px solid var(--line); }
+  /* ---------- форма и итог ---------- */
+  .field { display: block; padding: 11px 15px; border-top: 1px solid var(--line); }
   .field:first-child { border-top: 0; }
-  .field span { display: block; font-size: 12px; color: var(--hint); margin-bottom: 2px; }
+  .field span { display: block; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--hint); margin-bottom: 3px; }
   .field input, .field textarea { width: 100%; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 16px; padding: 2px 0; resize: none; }
-  .field input::placeholder, .field textarea::placeholder { color: var(--hint); opacity: .7; }
-  .tgphone { margin: 10px 0 0; width: 100%; height: 42px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
-
-  .sum { padding: 6px 14px; }
+  .field input::placeholder, .field textarea::placeholder { color: var(--hint); opacity: .65; }
+  .tgphone { margin: 10px 0 0; width: 100%; height: 44px; border-radius: 12px; border: 1px solid var(--accent); color: var(--accent); font-weight: 600; }
+  .sum { padding: 6px 15px 8px; }
   .sum .l { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; font-size: 14px; }
   .sum .l span:first-child { color: var(--hint); }
-  .sum .l span:last-child { text-align: right; }
-  .sum .tot { border-top: 1px solid var(--line); margin-top: 4px; padding-top: 11px; font-size: 16px; font-weight: 700; }
-  .sum .tot span:first-child { color: var(--text); }
+  .sum .l span:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  .sum .tot { border-top: 1px dashed var(--line); margin-top: 6px; padding-top: 12px; align-items: baseline; }
+  .sum .tot span:first-child { color: var(--text); font-weight: 600; }
+  .sum .tot span:last-child { font-family: var(--serif); font-size: 26px; font-weight: 600; }
   .sum .pre { color: var(--accent); font-weight: 600; }
-  .rules { font-size: 12.5px; color: var(--hint); margin: 10px 4px 0; }
+  .consent { display: flex; gap: 12px; align-items: flex-start; width: 100%; text-align: left; margin-top: 12px; padding: 13px 15px; font-size: 13.5px; line-height: 1.45; }
+  .consent .box { flex: 0 0 22px; height: 22px; border-radius: 6px; border: 1.5px solid var(--hint); display: grid; place-items: center; color: #fff; font-size: 13px; font-weight: 700; margin-top: 1px; transition: .15s; }
+  .consent.on .box { background: var(--accent); border-color: var(--accent); }
+  .consent .lnk { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+  .consent-ok { margin-top: 12px; font-size: 13px; color: var(--ok); padding: 0 4px; }
+  .rules { font-size: 12.5px; color: var(--hint); margin: 12px 4px 0; }
   .rules div { margin: 3px 0; }
 
-  /* bar (outside Telegram) */
-  .bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: linear-gradient(transparent, var(--bg) 30%); }
-  .cta { display: block; width: 100%; max-width: 492px; margin: 0 auto; height: 52px; border-radius: 14px; background: var(--accent); color: var(--on-accent); font-weight: 650; font-size: 16px; box-shadow: 0 6px 20px rgba(0,0,0,.12); }
+  .sheet-bg { position: fixed; inset: 0; background: rgba(10,8,6,.5); z-index: 20; display: flex; align-items: flex-end; justify-content: center; animation: fade .2s; }
+  .sheet { background: var(--card); color: var(--text); width: 100%; max-width: 520px; max-height: 84vh; overflow: auto; border-radius: 22px 22px 0 0; padding: 22px 20px calc(18px + env(safe-area-inset-bottom)); animation: up .28s cubic-bezier(.2,.8,.2,1); }
+  @keyframes up { from { transform: translateY(40px); opacity: .5; } to { transform: none; opacity: 1; } }
+  .sheet h3 { margin: 0 0 12px; color: var(--text); text-transform: none; letter-spacing: 0; font-family: var(--serif); font-size: 24px; font-weight: 600; }
+  .sheet p { font-size: 14px; margin: 0 0 10px; }
+  .sheet .cta { margin-top: 16px; }
+
+  /* ---------- кнопка вне Telegram ---------- */
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: linear-gradient(transparent, var(--bg) 35%); }
+  .cta { display: block; width: 100%; max-width: 488px; margin: 0 auto; height: 52px; border-radius: 14px; background: var(--accent); color: var(--on-accent); font-weight: 650; font-size: 15.5px; letter-spacing: .01em; box-shadow: 0 8px 22px rgba(180,101,42,.28); transition: .2s; }
   .cta:disabled { background: var(--busy); color: var(--hint); box-shadow: none; cursor: default; }
 
-  /* done */
-  .done { text-align: center; padding: 36px 6px 8px; }
-  .done-ic { width: 76px; height: 76px; margin: 0 auto 16px; border-radius: 50%; background: var(--ok); color: #fff; display: grid; place-items: center; font-size: 38px;
-    animation: pop .45s cubic-bezier(.2,1.4,.4,1); }
+  /* ---------- готово ---------- */
+  .done { text-align: center; padding: 44px 4px 8px; }
+  .done-ic { width: 78px; height: 78px; margin: 0 auto 18px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 34px; position: relative;
+    animation: pop .5s cubic-bezier(.2,1.4,.4,1); }
+  .done-ic::after { content: ""; position: absolute; inset: -8px; border-radius: 50%; border: 1px solid var(--accent); opacity: .35; animation: ring 1.6s ease-out .3s both; }
   @keyframes pop { from { transform: scale(.4); opacity: 0 } to { transform: scale(1); opacity: 1 } }
-  .done h2 { margin: 0 0 6px; font-size: 22px; }
-  .done p { color: var(--hint); margin: 0 auto 18px; max-width: 360px; }
+  @keyframes ring { from { transform: scale(.8); opacity: .6 } to { transform: scale(1.35); opacity: 0 } }
+  .done h2 { margin: 0 0 8px; font-size: 30px; }
+  .done p { color: var(--hint); margin: 0 auto 20px; max-width: 360px; }
   .done .card { text-align: left; }
-  .demo-hint { margin-top: 14px; padding: 12px 14px; border-radius: 14px; background: var(--accent-soft); font-size: 13.5px; text-align: left; }
+  .demo-hint { margin-top: 14px; padding: 13px 15px; border-radius: 14px; background: var(--accent-soft); font-size: 13.5px; text-align: left; }
 
-  .toast { position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 20px); opacity: 0; transition: .2s; pointer-events: none;
-    background: rgba(20,17,14,.92); color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 14px; max-width: calc(100% - 32px); text-align: center; z-index: 10; }
+  .toast { position: fixed; left: 50%; bottom: 100px; transform: translate(-50%, 20px); opacity: 0; transition: .2s; pointer-events: none;
+    background: rgba(24,20,16,.94); color: #f6efe6; padding: 11px 16px; border-radius: 12px; font-size: 14px; max-width: calc(100% - 32px); text-align: center; z-index: 30; }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
-  .fade { animation: fade .22s ease; }
-  @keyframes fade { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+  .fade { animation: fade .28s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+  @media (prefers-reduced-motion: reduce) { .steam path, .twinkle, .fade, .done-ic, .done-ic::after, .sheet { animation: none !important; } .steam path { opacity: .4; } }
 </style>
 </head>
 <body>
@@ -162,6 +194,7 @@
     slug: 'kedr', name: 'Баня на дровах «Кедр»', city: 'Новосибирск', address: 'ул. Лесная, 12',
     rating: '4.9', reviews: 312, accent: '#c8742b', open: 10, close: 26, weekendDays: [5, 6, 0], prepayPercent: 30,
     cancelRule: 'Бесплатная отмена или перенос — за 24 часа до визита',
+    operator: 'ИП Кедров К. К. (демо), ИНН 000000000000',
     halls: [
       { id: 'russkaya', name: 'Русская парная', tone: '#8a4b2a', capacity: 10, included: 6, extraGuest: 400, minHours: 2,
         price: { weekday: 3000, weekend: 3800 }, features: ['Парная на берёзовых дровах', 'Купель с ледяной водой', 'Комната отдыха на 10 мест'] },
@@ -187,7 +220,9 @@
   var BATH = window.__BATH__ || null;
   var app = document.getElementById('app');
 
-  var S = { step: 1, hallId: null, date: null, dur: 2, start: null, guests: 4, extras: {}, name: '', phone: '', comment: '', sending: false, done: null };
+  // c=1 в ссылке — согласие на обработку ПД уже дано в чате с ботом
+  var CONSENT_IN_CHAT = qs.get('c') === '1';
+  var S = { step: 1, hallId: null, date: null, dur: 2, start: null, guests: 4, extras: {}, name: '', phone: '', comment: '', consent: CONSENT_IN_CHAT, sheet: false, sending: false, done: null };
 
   // ---------- helpers ----------
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -282,26 +317,47 @@
       var h = hall();
       return '<div class="compact"><b>' + esc(BATH.name) + '</b><span>' + esc(h ? h.name : '') + '</span></div>';
     }
-    return '<header class="hero"><div class="hero-top"><span class="pill"><span class="dot"></span>Онлайн-бронь 24/7</span>' +
-      (BATH.rating ? '<span class="pill">★ ' + esc(BATH.rating) + (BATH.reviews ? ' · ' + BATH.reviews + ' ' + plural(BATH.reviews, 'отзыв', 'отзыва', 'отзывов') : '') + '</span>' : '') +
-      '</div><h1>' + esc(BATH.name) + '</h1><div class="hero-sub">' + esc([BATH.city, BATH.address].filter(Boolean).join(', ')) + '</div></header>';
+    return '<header class="hero">' + SCENE + '<div class="hero-in"><div class="eyebrow"><span class="dot"></span>Онлайн-бронь · 24/7</div>' +
+      '<h1>' + esc(BATH.name) + '</h1><div class="hero-sub">' + esc([BATH.city, BATH.address].filter(Boolean).join(', ')) +
+      (BATH.rating ? ' · <span class="star">★</span> ' + esc(BATH.rating) : '') + '</div></div></header>';
   }
+  // Ночная сцена: банный домик, луна и пар из трубы (тот же образ, что на аватарке бота)
+  var SCENE =
+    '<svg class="scene" viewBox="0 0 400 232" preserveAspectRatio="xMaxYMax slice" aria-hidden="true">' +
+    '<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0e1228"/><stop offset=".62" stop-color="#2a1b24"/><stop offset="1" stop-color="#5e3018"/></linearGradient>' +
+    '<radialGradient id="glow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#e98a3d" stop-opacity=".55"/><stop offset="1" stop-color="#e98a3d" stop-opacity="0"/></radialGradient>' +
+    '<radialGradient id="win" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffc66d" stop-opacity=".7"/><stop offset="1" stop-color="#ffc66d" stop-opacity="0"/></radialGradient></defs>' +
+    '<rect width="400" height="232" fill="url(#sky)"/><circle cx="300" cy="222" r="170" fill="url(#glow)"/>' +
+    '<g fill="#fff"><circle cx="40" cy="30" r="1"/><circle class="twinkle" cx="92" cy="58" r="1.2"/><circle cx="150" cy="22" r=".9"/><circle cx="205" cy="48" r="1.1"/>' +
+    '<circle class="twinkle" cx="248" cy="18" r=".9" style="animation-delay:1.5s"/><circle cx="125" cy="96" r=".8"/><circle cx="20" cy="84" r=".9"/><circle class="twinkle" cx="388" cy="96" r="1" style="animation-delay:2.4s"/></g>' +
+    '<circle cx="352" cy="46" r="28" fill="#f3e6c4" opacity=".1"/><circle cx="352" cy="46" r="14" fill="#f3e6c4"/>' +
+    '<g class="steam" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"><path d="M323 104c-6-8 6-14 0-22s6-14 0-21"/><path d="M331 104c-6-8 6-14 0-22s6-14 0-21"/><path d="M315 104c-6-8 6-14 0-22s6-14 0-21"/></g>' +
+    '<circle cx="279" cy="166" r="34" fill="url(#win)"/>' +
+    '<path d="M0 232V200Q170 170 400 190V232Z" fill="#110b08"/>' +
+    '<rect x="319" y="104" width="10" height="26" fill="#2b1a12"/>' +
+    '<rect x="256" y="140" width="96" height="54" rx="3" fill="#6b391e"/>' +
+    '<g stroke="#4c2713" stroke-width="2"><path d="M258 151h92M258 162h92M258 173h92M258 184h92"/></g>' +
+    '<path d="M244 142L304 106L364 142Z" fill="#24150e"/><path d="M244 142L304 106L364 142" fill="none" stroke="#d98a45" stroke-width="1.6"/>' +
+    '<rect x="268" y="154" width="22" height="18" rx="2" fill="#ffc66d"/><path d="M279 154v18M268 163h22" stroke="#6b391e" stroke-width="2"/>' +
+    '<rect x="318" y="160" width="20" height="34" rx="2" fill="#3a1f10"/><circle cx="333" cy="178" r="1.6" fill="#e8a85a"/>' +
+    '</svg>';
   function progress() {
     var names = ['Зал', 'Время', 'Допы', 'Контакты'];
     return '<div class="progress">' + names.map(function (n, i) {
-      return '<div class="' + (i + 1 === S.step ? 'on' : i + 1 < S.step ? 'past' : '') + '">' + n + '</div>';
+      return '<div class="' + (i + 1 === S.step ? 'on' : i + 1 < S.step ? 'past' : '') + '"><i>0' + (i + 1) + '</i>' + n + '</div>';
     }).join('') + '</div>';
   }
 
   function step1() {
     return '<h2>Выберите зал</h2>' + BATH.halls.map(function (h) {
-      var bg = h.photo ? 'linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.45)), url(' + encodeURI(h.photo) + ')'
-        : 'radial-gradient(120% 120% at 100% 0%, rgba(255,255,255,.22), transparent 60%), linear-gradient(135deg, ' + h.tone + ', #1c140e)';
+      var art = h.photo ? ' style="--tone:' + esc(h.tone) + ';background-image:linear-gradient(rgba(0,0,0,.15),rgba(0,0,0,.55)),url(' + encodeURI(h.photo) + ')"'
+        : ' style="--tone:' + esc(h.tone || '#6b391e') + '"';
       return '<button class="card hall' + (S.hallId === h.id ? ' sel' : '') + '" data-act="hall" data-v="' + esc(h.id) + '">' +
-        '<div class="hall-top" style="background-image:' + bg + '"><span class="cap">до ' + h.capacity + ' ' + plural(h.capacity, 'гостя', 'гостей', 'гостей') + '</span>' +
-        '<b>' + esc(h.name) + '</b><span class="hall-check">' + (S.hallId === h.id ? '✓' : '') + '</span></div>' +
-        '<div class="hall-body"><ul>' + h.features.map(function (f) { return '<li>' + esc(f) + '</li>'; }).join('') + '</ul>' +
-        '<div class="hall-price"><span>минимум ' + h.minHours + ' ' + plural(h.minHours, 'час', 'часа', 'часов') + '</span><span>от <b>' + money(h.price.weekday) + '</b> / час</span></div></div></button>';
+        '<div class="hall-art"' + art + '><b>' + h.capacity + '</b><small>' + plural(h.capacity, 'гость', 'гостя', 'гостей') + '</small></div>' +
+        '<div class="hall-main"><div class="hall-name">' + esc(h.name) + '</div>' +
+        '<div class="hall-feat">' + h.features.map(esc).join(' · ') + '</div>' +
+        '<div class="hall-foot"><span>от ' + h.minHours + ' ' + plural(h.minHours, 'часа', 'часов', 'часов') + '</span><span><b>' + money(h.price.weekday) + '</b> / час</span></div></div>' +
+        '<span class="hall-check">' + (S.hallId === h.id ? '✓' : '') + '</span></button>';
     }).join('');
   }
 
@@ -368,7 +424,23 @@
       '<label class="field"><span>Пожелания</span><textarea id="f-comment" rows="2" placeholder="Например: будем с детьми, нужен детский веник">' + esc(S.comment) + '</textarea></label></div>' +
       (canAsk && !S.phone ? '<button class="tgphone" data-act="contact">Взять номер из Telegram</button>' : '') +
       '<h3>Ваша бронь</h3><div class="card sum">' + summaryRows(c) + '</div>' +
-      '<div class="rules"><div>• Предоплату можно внести после подтверждения администратором</div><div>• ' + esc(BATH.cancelRule) + '</div></div>';
+      '<div class="rules"><div>• Предоплату можно внести после подтверждения администратором</div><div>• ' + esc(BATH.cancelRule) + '</div></div>' +
+      (CONSENT_IN_CHAT
+        ? '<div class="consent-ok">✓ Согласие на обработку персональных данных получено в чате</div>'
+        : '<button class="card consent' + (S.consent ? ' on' : '') + '" data-act="consent"><span class="box">' + (S.consent ? '✓' : '') + '</span>' +
+          '<span>Я даю согласие на обработку моих персональных данных на <span class="lnk" data-act="sheet">этих условиях</span></span></button>');
+  }
+
+  function consentSheet() {
+    return '<div class="sheet-bg" data-act="sheet-close"><div class="sheet" data-act="sheet-body">' +
+      '<h3>Согласие на обработку персональных данных</h3>' +
+      '<p>Отмечая галочку, вы даёте согласие ' + esc(BATH.operator || BATH.name) + ' на обработку ваших персональных данных: имени, номера телефона, данных профиля Telegram (имя, ник, ID) и сведений о бронированиях.</p>' +
+      '<p><b>Цель:</b> принять и подтвердить бронь, напомнить о визите, связаться с вами по брони.</p>' +
+      '<p><b>Действия:</b> сбор, запись, хранение, уточнение, использование, удаление. Третьим лицам данные не передаются, кроме случаев, предусмотренных законом.</p>' +
+      '<p><b>Срок:</b> до достижения цели обработки или до отзыва согласия.</p>' +
+      '<p><b>Отзыв:</b> в любой момент командой /revoke в чате с ботом или через администратора.</p>' +
+      '<p style="color:var(--hint)">Основание: Федеральный закон № 152-ФЗ «О персональных данных».</p>' +
+      '<button class="cta" data-act="sheet-agree">Согласен</button></div></div>';
   }
 
   function doneView() {
@@ -389,7 +461,9 @@
     if (S.step === 3) return { text: (c.items.length ? 'Далее · ' : 'Пропустить · ') + money(c.total), active: true };
     var ok = S.name.trim().length >= 2 && phoneDigits().length === 11;
     if (S.sending) return { text: 'Отправляем…', active: false };
-    return { text: ok ? 'Забронировать · ' + money(c.total) : 'Укажите имя и телефон', active: ok };
+    if (!ok) return { text: 'Укажите имя и телефон', active: false };
+    if (!S.consent) return { text: 'Отметьте согласие на обработку данных', active: false };
+    return { text: 'Забронировать · ' + money(c.total), active: true };
   }
   function updateCTA() {
     var st = ctaState();
@@ -404,7 +478,7 @@
   function onMain() {
     if (S.done) { if (inTG) tg.close(); else { S = Object.assign(S, { step: 1, hallId: null, start: null, extras: {}, comment: '', done: null }); render(true); } return; }
     var st = ctaState();
-    if (!st.active) { if (S.step === 4) toast('Укажите имя и номер телефона'); return; }
+    if (!st.active) { if (S.step === 4) toast(S.consent ? 'Укажите имя и номер телефона' : 'Укажите имя, телефон и отметьте согласие'); return; }
     if (S.step === 4) return submit();
     go(S.step + 1);
   }
@@ -425,7 +499,7 @@
     var extras = {}; c.items.forEach(function (i) { extras[i.id] = i.qty; });
     var payload = {
       bath: BATH.slug, hallId: h.id, date: S.date, start: S.start, hours: S.dur, guests: S.guests, extras: extras,
-      total: c.total, prepay: c.prepay, name: S.name.trim(), phone: S.phone, comment: S.comment.trim(),
+      total: c.total, prepay: c.prepay, name: S.name.trim(), phone: S.phone, comment: S.comment.trim(), consent: !!S.consent,
       dateLabel: dateLabel(S.date), initData: inTG ? tg.initData : '', user: u || null
     };
     var rows = summaryRows(c);
@@ -447,7 +521,8 @@
     var ds = app.querySelector('.dates'), dsl = ds ? ds.scrollLeft : 0, y = window.scrollY;
     var body = S.done ? doneView() : [step1, step2, step3, step4][S.step - 1]();
     app.innerHTML = '<div class="wrap">' + (S.done ? '' : hero() + progress()) + '<div' + (resetScroll ? ' class="fade"' : '') + '>' + body + '</div></div>' +
-      (inTG ? '' : '<div class="bar"><button class="cta" id="cta" data-act="main"></button></div>');
+      (inTG ? '' : '<div class="bar"><button class="cta" id="cta" data-act="main"></button></div>') +
+      (S.sheet ? consentSheet() : '');
     document.body.classList.toggle('has-bar', !inTG);
     var nd = app.querySelector('.dates');
     if (nd) {
@@ -461,6 +536,11 @@
     var t = e.target.closest('[data-act]'); if (!t || t.disabled) return;
     var act = t.getAttribute('data-act'), v = t.getAttribute('data-v'), h = hall();
     if (act === 'main') return onMain();
+    if (act === 'sheet') { S.sheet = true; haptic('tap'); return render(); }
+    if (act === 'sheet-close') { S.sheet = false; return render(); }
+    if (act === 'sheet-body') return;
+    if (act === 'sheet-agree') { S.sheet = false; S.consent = true; haptic('success'); return render(); }
+    if (act === 'consent') { S.consent = !S.consent; haptic('tap'); return render(); }
     if (act === 'hall') {
       var nh = BATH.halls.filter(function (x) { return x.id === v; })[0];
       if (S.hallId !== v) {
@@ -516,18 +596,14 @@
   // ---------- boot ----------
   function applyTheme() {
     var root = document.documentElement.style;
-    root.setProperty('--accent', BATH.accent || '#c8742b');
+    if (BATH.accent) root.setProperty('--accent', BATH.accent);
     if (!inTG) return;
+    // своя палитра (бумага / ночь), а светлую или тёмную выбираем по теме Telegram
+    var dark = tg.colorScheme === 'dark';
     document.documentElement.classList.add('tg');
-    var p = tg.themeParams || {}, dark = tg.colorScheme === 'dark';
-    if (p.secondary_bg_color) root.setProperty('--bg', p.secondary_bg_color);
-    if (p.section_bg_color || p.bg_color) root.setProperty('--card', p.section_bg_color || p.bg_color);
-    if (p.text_color) root.setProperty('--text', p.text_color);
-    if (p.hint_color) root.setProperty('--hint', p.hint_color);
-    root.setProperty('--line', dark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.08)');
-    root.setProperty('--chip', dark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.05)');
-    root.setProperty('--busy', dark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)');
-    try { tg.setHeaderColor('secondary_bg_color'); tg.setBackgroundColor('secondary_bg_color'); } catch (e) {}
+    document.documentElement.classList.toggle('dark', dark);
+    try { tg.setHeaderColor('#0e1228'); tg.setBackgroundColor(dark ? '#12100e' : '#f4efe7'); } catch (e) {}
+    tg.onEvent && tg.onEvent('themeChanged', function () { document.documentElement.classList.toggle('dark', tg.colorScheme === 'dark'); });
   }
   function start() {
     if (!BATH || !BATH.halls) BATH = DEFAULT_BATH;
