@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Бронь бани</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: #f4f1ec; --card: #ffffff; --text: #1d1813; --hint: #8a8178; --line: rgba(29,24,19,.09);
+    --chip: #efebe5; --accent: #c8742b; --accent-soft: rgba(200,116,43,.12); --on-accent: #fff;
+    --busy: #e6e1da; --danger: #c2453d; --ok: #2f8a4c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not(.tg) { --bg: #12100e; --card: #1e1a17; --text: #f2ece5; --hint: #9a9087; --line: rgba(255,255,255,.08);
+      --chip: #2a2521; --busy: #2b2723; --accent-soft: rgba(200,116,43,.2); }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body { font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  body.has-bar { padding-bottom: 88px; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
+  .wrap { max-width: 520px; margin: 0 auto; padding: 0 14px 24px; }
+
+  /* hero */
+  .hero { margin: 0 -14px; padding: 22px 18px 20px; color: #fff; position: relative; overflow: hidden;
+    background: radial-gradient(120% 140% at 100% 0%, rgba(255,255,255,.18), transparent 55%), linear-gradient(140deg, var(--accent), #5a2f17); }
+  .hero::after { content: ""; position: absolute; right: -30px; bottom: -40px; width: 180px; height: 180px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,.14), transparent 70%); }
+  .hero-top { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .pill { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 99px; background: rgba(255,255,255,.18); backdrop-filter: blur(4px); }
+  .pill .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #7CF29A; margin-right: 6px; vertical-align: 1px; }
+  .hero h1 { font-size: 23px; line-height: 1.2; margin: 0 0 6px; letter-spacing: -.01em; }
+  .hero-sub { font-size: 13.5px; opacity: .85; }
+  .compact { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 2px 4px; }
+  .compact b { font-size: 15px; }
+  .compact span { font-size: 13px; color: var(--hint); text-align: right; }
+
+  /* progress */
+  .progress { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 14px 0 6px; }
+  .progress div { font-size: 11.5px; color: var(--hint); }
+  .progress div::before { content: ""; display: block; height: 4px; border-radius: 4px; background: var(--line); margin-bottom: 6px; }
+  .progress .on { color: var(--text); font-weight: 600; }
+  .progress .on::before, .progress .past::before { background: var(--accent); }
+
+  h2 { font-size: 19px; margin: 18px 2px 10px; letter-spacing: -.01em; }
+  h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--hint); margin: 20px 4px 8px; font-weight: 600; }
+  .card { background: var(--card); border-radius: 16px; border: 1px solid var(--line); }
+
+  /* halls */
+  .hall { display: block; width: 100%; text-align: left; margin-bottom: 12px; overflow: hidden; transition: transform .12s, box-shadow .12s; }
+  .hall:active { transform: scale(.985); }
+  .hall.sel { box-shadow: 0 0 0 2px var(--accent); border-color: transparent; }
+  .hall-top { height: 92px; padding: 14px; color: #fff; display: flex; flex-direction: column; justify-content: space-between; position: relative;
+    background-size: cover; background-position: center; }
+  .hall-top .cap { align-self: flex-start; font-size: 12px; font-weight: 600; background: rgba(0,0,0,.28); padding: 3px 9px; border-radius: 99px; }
+  .hall-top b { font-size: 18px; text-shadow: 0 1px 8px rgba(0,0,0,.25); }
+  .hall-check { position: absolute; right: 12px; top: 12px; width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(255,255,255,.8);
+    display: grid; place-items: center; font-size: 15px; font-weight: 700; }
+  .hall.sel .hall-check { background: #fff; color: var(--accent); border-color: #fff; }
+  .hall-body { padding: 12px 14px 14px; }
+  .hall-body ul { margin: 0 0 10px; padding: 0; list-style: none; font-size: 13.5px; color: var(--hint); }
+  .hall-body li { padding-left: 16px; position: relative; margin: 2px 0; }
+  .hall-body li::before { content: ""; position: absolute; left: 3px; top: 8px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+  .hall-price { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--hint); }
+  .hall-price b { font-size: 17px; color: var(--text); }
+
+  /* dates */
+  .dates { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; margin: 0 -14px; padding-left: 14px; padding-right: 14px; scrollbar-width: none; }
+  .dates::-webkit-scrollbar { display: none; }
+  .date { flex: 0 0 56px; padding: 8px 0 9px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); text-align: center; }
+  .date small { display: block; font-size: 11.5px; color: var(--hint); text-transform: capitalize; }
+  .date b { display: block; font-size: 19px; margin: 1px 0; }
+  .date.we small { color: var(--accent); }
+  .date.sel { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .date.sel small { color: rgba(255,255,255,.85); }
+
+  /* steppers */
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stepbox { padding: 12px; }
+  .stepbox .lbl { font-size: 12.5px; color: var(--hint); margin-bottom: 8px; }
+  .stepper { display: flex; align-items: center; justify-content: space-between; }
+  .stepper button { width: 34px; height: 34px; border-radius: 10px; background: var(--chip); font-size: 20px; line-height: 1; display: grid; place-items: center; }
+  .stepper button:disabled { opacity: .35; cursor: default; }
+  .stepper b { font-size: 17px; min-width: 44px; text-align: center; }
+  .note { font-size: 12.5px; color: var(--hint); margin: 8px 4px 0; }
+
+  /* slots */
+  .slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .slot { height: 44px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); font-weight: 600; font-size: 14.5px; }
+  .slot.busy { background: var(--busy); color: var(--hint); text-decoration: line-through; border-color: transparent; font-weight: 500; }
+  .slot.nofit { color: var(--hint); font-weight: 500; }
+  .slot.in { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+  .slot.first, .slot.last { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--hint); margin: 10px 4px 0; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .pricebar { margin-top: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13.5px; }
+  .pricebar b { font-size: 16px; white-space: nowrap; }
+  .empty { padding: 18px; text-align: center; color: var(--hint); font-size: 14px; }
+
+  /* extras */
+  .extra { display: flex; align-items: center; gap: 12px; padding: 13px 14px; border-top: 1px solid var(--line); }
+  .extra:first-child { border-top: 0; }
+  .extra .info { flex: 1; min-width: 0; }
+  .extra .info b { display: block; font-size: 15px; font-weight: 600; }
+  .extra .info small { display: block; font-size: 12.5px; color: var(--hint); margin-top: 1px; }
+  .extra .info .pr { font-size: 13px; color: var(--text); margin-top: 3px; }
+  .add { height: 34px; padding: 0 14px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 14px; white-space: nowrap; }
+  .extra .stepper { gap: 4px; }
+  .extra .stepper b { min-width: 26px; font-size: 15px; }
+
+  /* form */
+  .field { display: block; padding: 10px 14px; border-top: 1px solid var(--line); }
+  .field:first-child { border-top: 0; }
+  .field span { display: block; font-size: 12px; color: var(--hint); margin-bottom: 2px; }
+  .field input, .field textarea { width: 100%; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 16px; padding: 2px 0; resize: none; }
+  .field input::placeholder, .field textarea::placeholder { color: var(--hint); opacity: .7; }
+  .tgphone { margin: 10px 0 0; width: 100%; height: 42px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
+  .sum { padding: 6px 14px; }
+  .sum .l { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; font-size: 14px; }
+  .sum .l span:first-child { color: var(--hint); }
+  .sum .l span:last-child { text-align: right; }
+  .sum .tot { border-top: 1px solid var(--line); margin-top: 4px; padding-top: 11px; font-size: 16px; font-weight: 700; }
+  .sum .tot span:first-child { color: var(--text); }
+  .sum .pre { color: var(--accent); font-weight: 600; }
+  .rules { font-size: 12.5px; color: var(--hint); margin: 10px 4px 0; }
+  .rules div { margin: 3px 0; }
+
+  /* bar (outside Telegram) */
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: linear-gradient(transparent, var(--bg) 30%); }
+  .cta { display: block; width: 100%; max-width: 492px; margin: 0 auto; height: 52px; border-radius: 14px; background: var(--accent); color: var(--on-accent); font-weight: 650; font-size: 16px; box-shadow: 0 6px 20px rgba(0,0,0,.12); }
+  .cta:disabled { background: var(--busy); color: var(--hint); box-shadow: none; cursor: default; }
+
+  /* done */
+  .done { text-align: center; padding: 36px 6px 8px; }
+  .done-ic { width: 76px; height: 76px; margin: 0 auto 16px; border-radius: 50%; background: var(--ok); color: #fff; display: grid; place-items: center; font-size: 38px;
+    animation: pop .45s cubic-bezier(.2,1.4,.4,1); }
+  @keyframes pop { from { transform: scale(.4); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+  .done h2 { margin: 0 0 6px; font-size: 22px; }
+  .done p { color: var(--hint); margin: 0 auto 18px; max-width: 360px; }
+  .done .card { text-align: left; }
+  .demo-hint { margin-top: 14px; padding: 12px 14px; border-radius: 14px; background: var(--accent-soft); font-size: 13.5px; text-align: left; }
+
+  .toast { position: fixed; left: 50%; bottom: 96px; transform: translate(-50%, 20px); opacity: 0; transition: .2s; pointer-events: none;
+    background: rgba(20,17,14,.92); color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 14px; max-width: calc(100% - 32px); text-align: center; z-index: 10; }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .fade { animation: fade .22s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+<script>/*__INJECT__*/</script>
+<script>
+(function () {
+  'use strict';
+
+  // Запасной конфиг: используется, если n8n недоступен (например, при локальном просмотре)
+  var DEFAULT_BATH = {
+    slug: 'kedr', name: 'Баня на дровах «Кедр»', city: 'Новосибирск', address: 'ул. Лесная, 12',
+    rating: '4.9', reviews: 312, accent: '#c8742b', open: 10, close: 26, weekendDays: [5, 6, 0], prepayPercent: 30,
+    cancelRule: 'Бесплатная отмена или перенос — за 24 часа до визита',
+    halls: [
+      { id: 'russkaya', name: 'Русская парная', tone: '#8a4b2a', capacity: 10, included: 6, extraGuest: 400, minHours: 2,
+        price: { weekday: 3000, weekend: 3800 }, features: ['Парная на берёзовых дровах', 'Купель с ледяной водой', 'Комната отдыха на 10 мест'] },
+      { id: 'finskaya', name: 'Финская сауна и бассейн', tone: '#2f5d6b', capacity: 14, included: 8, extraGuest: 350, minHours: 3,
+        price: { weekday: 3500, weekend: 4500 }, features: ['Сауна до 100°', 'Бассейн 6×3 м, вода +29°', 'Бильярд и караоке'] },
+      { id: 'vip', name: 'VIP-баня с чаном', tone: '#3d4b2c', capacity: 6, included: 4, extraGuest: 600, minHours: 3,
+        price: { weekday: 4500, weekend: 5500 }, features: ['Горячий чан под открытым небом', 'Парная из кедра', 'Отдельный вход и терраса'] }
+    ],
+    extras: [
+      { id: 'venik_dub', name: 'Веник дубовый', price: 600, max: 6 },
+      { id: 'venik_ber', name: 'Веник берёзовый', price: 500, max: 6 },
+      { id: 'parenie', name: 'Парение с пармейстером', note: '60 минут, авторская программа', price: 3500, max: 3 },
+      { id: 'chan', name: 'Горячий чан с травами', note: '2 часа на открытом воздухе', price: 3000, max: 1, hideFor: ['vip'] },
+      { id: 'nabor', name: 'Банный набор', note: 'халат, полотенце, тапочки', price: 350, perGuest: true },
+      { id: 'samovar', name: 'Самовар и травяной чай', note: 'с мёдом и вареньем', price: 800, max: 1 }
+    ]
+  };
+
+  var tg = window.Telegram && window.Telegram.WebApp;
+  var inTG = !!(tg && tg.initData);
+  var qs = new URLSearchParams(location.search);
+  var API = (window.__API__ || qs.get('api') || '').replace(/\/+$/, '');
+  var BATH = window.__BATH__ || null;
+  var app = document.getElementById('app');
+
+  var S = { step: 1, hallId: null, date: null, dur: 2, start: null, guests: 4, extras: {}, name: '', phone: '', comment: '', sending: false, done: null };
+
+  // ---------- helpers ----------
+  function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function money(n) { return Math.round(n).toLocaleString('ru-RU') + ' ₽'; }
+  function hh(h) { return String(h % 24).padStart(2, '0') + ':00'; }
+  function plural(n, a, b, c) { var m = n % 10, k = n % 100; return (m === 1 && k !== 11) ? a : (m >= 2 && m <= 4 && (k < 12 || k > 14)) ? b : c; }
+  function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function parseIso(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function hall() { for (var i = 0; i < BATH.halls.length; i++) if (BATH.halls[i].id === S.hallId) return BATH.halls[i]; return null; }
+  function isWeekend(s) { return (BATH.weekendDays || [6, 0]).indexOf(parseIso(s).getDay()) >= 0; }
+  function rate(h, s) { return isWeekend(s) ? h.price.weekend : h.price.weekday; }
+  function dateLabel(s) { return parseIso(s).toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'long' }); }
+  function haptic(kind) {
+    if (!inTG || !tg.HapticFeedback) return;
+    try { kind === 'tap' ? tg.HapticFeedback.selectionChanged() : tg.HapticFeedback.notificationOccurred(kind); } catch (e) {}
+  }
+  var toastTimer;
+  function toast(t) {
+    var el = document.getElementById('toast'); el.textContent = t; el.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.classList.remove('show'); }, 2600);
+  }
+
+  function dateList() {
+    var out = [], now = new Date();
+    for (var i = 0; i < 14; i++) {
+      var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i), s = iso(d);
+      out.push({ iso: s, day: d.getDate(), wd: i === 0 ? 'сегодня' : i === 1 ? 'завтра' : d.toLocaleDateString('ru-RU', { weekday: 'short' }), we: isWeekend(s) });
+    }
+    return out;
+  }
+
+  // Демо-занятость: детерминированно «занимаем» часть слотов, чтобы сетка выглядела живой
+  function seeded(str) {
+    var h = 2166136261;
+    for (var i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
+    return function () { h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); h ^= h >>> 16; return (h >>> 0) / 4294967296; };
+  }
+  function busySet(h, s) {
+    var r = seeded(BATH.slug + h.id + s), set = {}, n = (isWeekend(s) ? 2 : 1) + Math.floor(r() * 2);
+    for (var i = 0; i < n; i++) {
+      var len = 2 + Math.floor(r() * 3), st = BATH.open + Math.floor(r() * (BATH.close - BATH.open - len + 1));
+      for (var k = st; k < st + len; k++) set[k] = 1;
+    }
+    return set;
+  }
+  function minStart(s) {
+    if (s !== iso(new Date())) return BATH.open;
+    var now = new Date(); return Math.max(BATH.open, now.getHours() + (now.getMinutes() > 0 ? 1 : 0));
+  }
+  function canStart(h, s, start, dur, busy) {
+    if (start < minStart(s) || start + dur > BATH.close) return false;
+    for (var k = start; k < start + dur; k++) if (busy[k]) return false;
+    return true;
+  }
+  function freeStarts(h, s, dur) {
+    var busy = busySet(h, s), res = [];
+    for (var st = BATH.open; st < BATH.close; st++) if (canStart(h, s, st, dur, busy)) res.push(st);
+    return res;
+  }
+
+  function visibleExtras() { return BATH.extras.filter(function (e) { return !(e.hideFor || []).includes(S.hallId); }); }
+  function extraMax(e) { return e.perGuest ? S.guests : (e.max || 10); }
+  function calc() {
+    var h = hall(); if (!h) return null;
+    var r = rate(h, S.date), hallSum = r * S.dur, extraG = Math.max(0, S.guests - h.included), guestsSum = extraG * h.extraGuest;
+    var items = visibleExtras().filter(function (e) { return S.extras[e.id] > 0; }).map(function (e) {
+      return { id: e.id, name: e.name, qty: S.extras[e.id], sum: S.extras[e.id] * e.price };
+    });
+    var extrasSum = items.reduce(function (a, b) { return a + b.sum; }, 0), total = hallSum + guestsSum + extrasSum;
+    return { rate: r, hallSum: hallSum, extraG: extraG, guestsSum: guestsSum, items: items, extrasSum: extrasSum, total: total,
+      prepay: Math.round(total * BATH.prepayPercent / 1000) * 10 };
+  }
+  function phoneDigits() { return S.phone.replace(/\D/g, ''); }
+  function fmtPhone(v) {
+    var d = v.replace(/\D/g, '');
+    if (!d) return '';
+    if (d[0] === '8') d = '7' + d.slice(1);
+    if (d[0] === '9') d = '7' + d;
+    d = d.slice(0, 11);
+    var o = '+' + d[0];
+    if (d.length > 1) o += ' (' + d.slice(1, 4);
+    if (d.length >= 4) o += ')';
+    if (d.length > 4) o += ' ' + d.slice(4, 7);
+    if (d.length > 7) o += '-' + d.slice(7, 9);
+    if (d.length > 9) o += '-' + d.slice(9, 11);
+    return o;
+  }
+
+  // ---------- views ----------
+  function hero() {
+    if (S.step > 1) {
+      var h = hall();
+      return '<div class="compact"><b>' + esc(BATH.name) + '</b><span>' + esc(h ? h.name : '') + '</span></div>';
+    }
+    return '<header class="hero"><div class="hero-top"><span class="pill"><span class="dot"></span>Онлайн-бронь 24/7</span>' +
+      (BATH.rating ? '<span class="pill">★ ' + esc(BATH.rating) + (BATH.reviews ? ' · ' + BATH.reviews + ' ' + plural(BATH.reviews, 'отзыв', 'отзыва', 'отзывов') : '') + '</span>' : '') +
+      '</div><h1>' + esc(BATH.name) + '</h1><div class="hero-sub">' + esc([BATH.city, BATH.address].filter(Boolean).join(', ')) + '</div></header>';
+  }
+  function progress() {
+    var names = ['Зал', 'Время', 'Допы', 'Контакты'];
+    return '<div class="progress">' + names.map(function (n, i) {
+      return '<div class="' + (i + 1 === S.step ? 'on' : i + 1 < S.step ? 'past' : '') + '">' + n + '</div>';
+    }).join('') + '</div>';
+  }
+
+  function step1() {
+    return '<h2>Выберите зал</h2>' + BATH.halls.map(function (h) {
+      var bg = h.photo ? 'linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.45)), url(' + encodeURI(h.photo) + ')'
+        : 'radial-gradient(120% 120% at 100% 0%, rgba(255,255,255,.22), transparent 60%), linear-gradient(135deg, ' + h.tone + ', #1c140e)';
+      return '<button class="card hall' + (S.hallId === h.id ? ' sel' : '') + '" data-act="hall" data-v="' + esc(h.id) + '">' +
+        '<div class="hall-top" style="background-image:' + bg + '"><span class="cap">до ' + h.capacity + ' ' + plural(h.capacity, 'гостя', 'гостей', 'гостей') + '</span>' +
+        '<b>' + esc(h.name) + '</b><span class="hall-check">' + (S.hallId === h.id ? '✓' : '') + '</span></div>' +
+        '<div class="hall-body"><ul>' + h.features.map(function (f) { return '<li>' + esc(f) + '</li>'; }).join('') + '</ul>' +
+        '<div class="hall-price"><span>минимум ' + h.minHours + ' ' + plural(h.minHours, 'час', 'часа', 'часов') + '</span><span>от <b>' + money(h.price.weekday) + '</b> / час</span></div></div></button>';
+    }).join('');
+  }
+
+  function step2() {
+    var h = hall(), days = dateList(), busy = busySet(h, S.date), maxDur = Math.min(8, BATH.close - BATH.open);
+    var html = '<h2>Дата и время</h2><div class="dates">' + days.map(function (d) {
+      return '<button class="date' + (d.we ? ' we' : '') + (d.iso === S.date ? ' sel' : '') + '" data-act="date" data-v="' + d.iso + '"><small>' + d.wd + '</small><b>' + d.day + '</b></button>';
+    }).join('') + '</div>';
+    html += '<div class="row2" style="margin-top:12px">' +
+      '<div class="card stepbox"><div class="lbl">Длительность</div><div class="stepper"><button data-act="dur" data-v="-1"' + (S.dur <= h.minHours ? ' disabled' : '') + '>−</button><b>' + S.dur + ' ч</b><button data-act="dur" data-v="1"' + (S.dur >= maxDur ? ' disabled' : '') + '>+</button></div></div>' +
+      '<div class="card stepbox"><div class="lbl">Гостей</div><div class="stepper"><button data-act="guests" data-v="-1"' + (S.guests <= 1 ? ' disabled' : '') + '>−</button><b>' + S.guests + '</b><button data-act="guests" data-v="1"' + (S.guests >= h.capacity ? ' disabled' : '') + '>+</button></div></div></div>' +
+      '<div class="note">Включено ' + h.included + ' ' + plural(h.included, 'гость', 'гостя', 'гостей') + ', каждый следующий +' + money(h.extraGuest) + ' · минимум ' + h.minHours + ' ч</div>';
+
+    html += '<h3>Время начала</h3>';
+    var free = freeStarts(h, S.date, S.dur);
+    if (!free.length) {
+      html += '<div class="card empty">На этот день нет свободного окна на ' + S.dur + ' ч.<br>Выберите другой день или уменьшите длительность.</div>';
+    } else {
+      html += '<div class="slots">';
+      for (var k = BATH.open; k < BATH.close; k++) {
+        var cls = 'slot';
+        if (busy[k]) cls += ' busy';
+        else if (S.start != null && k >= S.start && k < S.start + S.dur) cls += k === S.start ? ' first' : k === S.start + S.dur - 1 ? ' last' : ' in';
+        else if (free.indexOf(k) < 0) cls += ' nofit';
+        html += '<button class="' + cls + '" data-act="slot" data-v="' + k + '">' + hh(k) + '</button>';
+      }
+      html += '</div><div class="legend"><span><i style="background:var(--card);border:1px solid var(--line)"></i>свободно</span><span><i style="background:var(--busy)"></i>занято</span><span><i style="background:var(--accent)"></i>ваше время</span></div>';
+    }
+    var r = rate(h, S.date);
+    html += '<div class="card pricebar"><span>' + (S.start != null ? hh(S.start) + '–' + hh(S.start + S.dur) + ' · ' : '') + S.dur + ' ч × ' + money(r) +
+      (isWeekend(S.date) ? ' <small style="color:var(--accent)">выходной</small>' : '') + '</span><b>' + money(calc().hallSum + calc().guestsSum) + '</b></div>';
+    return html;
+  }
+
+  function step3() {
+    return '<h2>Добавьте к визиту</h2><div class="card">' + visibleExtras().map(function (e) {
+      var q = S.extras[e.id] || 0, mx = extraMax(e);
+      var ctrl = q > 0
+        ? '<div class="stepper"><button data-act="ex" data-id="' + e.id + '" data-v="-1">−</button><b>' + q + '</b><button data-act="ex" data-id="' + e.id + '" data-v="1"' + (q >= mx ? ' disabled' : '') + '>+</button></div>'
+        : '<button class="add" data-act="ex" data-id="' + e.id + '" data-v="1">Добавить</button>';
+      return '<div class="extra"><div class="info"><b>' + esc(e.name) + '</b>' + (e.note ? '<small>' + esc(e.note) + '</small>' : '') +
+        '<div class="pr">' + money(e.price) + (e.perGuest ? ' за гостя' : '') + '</div></div>' + ctrl + '</div>';
+    }).join('') + '</div><div class="note">Можно пропустить: допы легко добавить и на месте.</div>';
+  }
+
+  function summaryRows(c) {
+    var h = hall(), rows = '';
+    rows += '<div class="l"><span>Зал</span><span>' + esc(h.name) + '</span></div>';
+    rows += '<div class="l"><span>Когда</span><span>' + dateLabel(S.date) + ', ' + hh(S.start) + '–' + hh(S.start + S.dur) + '</span></div>';
+    rows += '<div class="l"><span>' + S.dur + ' ч × ' + money(c.rate) + '</span><span>' + money(c.hallSum) + '</span></div>';
+    rows += '<div class="l"><span>Гостей: ' + S.guests + (c.extraG ? ' (+' + c.extraG + ' сверх включённых)' : '') + '</span><span>' + (c.guestsSum ? money(c.guestsSum) : 'включено') + '</span></div>';
+    c.items.forEach(function (i) { rows += '<div class="l"><span>' + esc(i.name) + (i.qty > 1 ? ' × ' + i.qty : '') + '</span><span>' + money(i.sum) + '</span></div>'; });
+    rows += '<div class="l tot"><span>Итого</span><span>' + money(c.total) + '</span></div>';
+    rows += '<div class="l"><span>Предоплата ' + BATH.prepayPercent + '%</span><span class="pre">' + money(c.prepay) + '</span></div>';
+    return rows;
+  }
+
+  function step4() {
+    var c = calc();
+    var canAsk = inTG && tg.requestContact && tg.isVersionAtLeast && tg.isVersionAtLeast('6.9');
+    return '<h2>Почти готово</h2><div class="card">' +
+      '<label class="field"><span>Имя</span><input id="f-name" autocomplete="name" placeholder="Как к вам обращаться" value="' + esc(S.name) + '"></label>' +
+      '<label class="field"><span>Телефон</span><input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 (900) 000-00-00" value="' + esc(S.phone) + '"></label>' +
+      '<label class="field"><span>Пожелания</span><textarea id="f-comment" rows="2" placeholder="Например: будем с детьми, нужен детский веник">' + esc(S.comment) + '</textarea></label></div>' +
+      (canAsk && !S.phone ? '<button class="tgphone" data-act="contact">Взять номер из Telegram</button>' : '') +
+      '<h3>Ваша бронь</h3><div class="card sum">' + summaryRows(c) + '</div>' +
+      '<div class="rules"><div>• Предоплату можно внести после подтверждения администратором</div><div>• ' + esc(BATH.cancelRule) + '</div></div>';
+  }
+
+  function doneView() {
+    var c = S.done.calc;
+    return '<div class="done fade"><div class="done-ic">✓</div><h2>Заявка отправлена</h2>' +
+      '<p>Детали брони уже в чате. Администратор подтвердит её в течение 15 минут.</p>' +
+      '<div class="card sum">' + S.done.rows + '</div>' +
+      (inTG ? '<div class="demo-hint"><b>Это демо.</b> Вернитесь в чат: там видно, какую заявку получил администратор. Подтвердите её и посмотрите, что бот отправит гостю дальше.</div>' : '') +
+      '</div>';
+  }
+
+  // ---------- main button ----------
+  function ctaState() {
+    if (S.done) return { text: inTG ? 'Вернуться в чат' : 'Новая бронь', active: true };
+    var c = calc();
+    if (S.step === 1) return S.hallId ? { text: 'Выбрать дату и время', active: true } : { text: 'Выберите зал', active: false };
+    if (S.step === 2) return S.start != null ? { text: 'Далее · ' + hh(S.start) + '–' + hh(S.start + S.dur), active: true } : { text: 'Выберите время начала', active: false };
+    if (S.step === 3) return { text: (c.items.length ? 'Далее · ' : 'Пропустить · ') + money(c.total), active: true };
+    var ok = S.name.trim().length >= 2 && phoneDigits().length === 11;
+    if (S.sending) return { text: 'Отправляем…', active: false };
+    return { text: ok ? 'Забронировать · ' + money(c.total) : 'Укажите имя и телефон', active: ok };
+  }
+  function updateCTA() {
+    var st = ctaState();
+    if (inTG) {
+      tg.MainButton.setParams({ text: st.text, color: st.active ? BATH.accent : '#a8a097', text_color: '#ffffff', is_active: st.active, is_visible: true });
+      if (S.step > 1 && !S.done) tg.BackButton.show(); else tg.BackButton.hide();
+    } else {
+      var b = document.getElementById('cta');
+      if (b) { b.textContent = st.text; b.disabled = !st.active; }
+    }
+  }
+  function onMain() {
+    if (S.done) { if (inTG) tg.close(); else { S = Object.assign(S, { step: 1, hallId: null, start: null, extras: {}, comment: '', done: null }); render(true); } return; }
+    var st = ctaState();
+    if (!st.active) { if (S.step === 4) toast('Укажите имя и номер телефона'); return; }
+    if (S.step === 4) return submit();
+    go(S.step + 1);
+  }
+  function go(step) {
+    if (step === 2) {
+      var h = hall(), days = dateList();
+      if (!freeStarts(h, S.date, S.dur).length) {
+        for (var i = 0; i < days.length; i++) if (freeStarts(h, days[i].iso, S.dur).length) { S.date = days[i].iso; break; }
+      }
+    }
+    S.step = step; haptic('tap'); render(true);
+  }
+
+  // ---------- submit ----------
+  function submit() {
+    if (S.sending) return;
+    var c = calc(), h = hall(), u = inTG && tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
+    var extras = {}; c.items.forEach(function (i) { extras[i.id] = i.qty; });
+    var payload = {
+      bath: BATH.slug, hallId: h.id, date: S.date, start: S.start, hours: S.dur, guests: S.guests, extras: extras,
+      total: c.total, prepay: c.prepay, name: S.name.trim(), phone: S.phone, comment: S.comment.trim(),
+      dateLabel: dateLabel(S.date), initData: inTG ? tg.initData : '', user: u || null
+    };
+    var rows = summaryRows(c);
+    S.sending = true; updateCTA();
+    if (inTG) tg.MainButton.showProgress(false);
+    var req = API
+      ? fetch(API + '/banya-booking', { method: 'POST', body: new URLSearchParams({ data: JSON.stringify(payload) }) }).then(function (r) { return r.ok; })
+      : new Promise(function (res) { setTimeout(function () { res(true); }, 700); });
+    req.catch(function () { return false; }).then(function (ok) {
+      S.sending = false;
+      if (inTG) tg.MainButton.hideProgress();
+      if (ok) { S.done = { calc: c, rows: rows }; haptic('success'); render(true); }
+      else { haptic('error'); toast('Не получилось отправить. Проверьте интернет и попробуйте ещё раз.'); updateCTA(); }
+    });
+  }
+
+  // ---------- render ----------
+  function render(resetScroll) {
+    var ds = app.querySelector('.dates'), dsl = ds ? ds.scrollLeft : 0, y = window.scrollY;
+    var body = S.done ? doneView() : [step1, step2, step3, step4][S.step - 1]();
+    app.innerHTML = '<div class="wrap">' + (S.done ? '' : hero() + progress()) + '<div' + (resetScroll ? ' class="fade"' : '') + '>' + body + '</div></div>' +
+      (inTG ? '' : '<div class="bar"><button class="cta" id="cta" data-act="main"></button></div>');
+    document.body.classList.toggle('has-bar', !inTG);
+    var nd = app.querySelector('.dates');
+    if (nd) {
+      if (resetScroll) { var sel = nd.querySelector('.sel'); if (sel) nd.scrollLeft = sel.offsetLeft - 14; } else nd.scrollLeft = dsl;
+    }
+    window.scrollTo(0, resetScroll ? 0 : y);
+    updateCTA();
+  }
+
+  app.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-act]'); if (!t || t.disabled) return;
+    var act = t.getAttribute('data-act'), v = t.getAttribute('data-v'), h = hall();
+    if (act === 'main') return onMain();
+    if (act === 'hall') {
+      var nh = BATH.halls.filter(function (x) { return x.id === v; })[0];
+      if (S.hallId !== v) {
+        S.hallId = v; S.start = null; S.dur = nh.minHours; S.guests = Math.min(Math.max(S.guests, 1), nh.capacity);
+        Object.keys(S.extras).forEach(function (k) { if (!visibleExtras().some(function (x) { return x.id === k; })) delete S.extras[k]; });
+      }
+      haptic('tap'); render();
+      if (!inTG) { var b = document.getElementById('cta'); b && b.animate && b.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.03)' }, { transform: 'scale(1)' }], 260); }
+      return;
+    }
+    if (act === 'date') { S.date = v; if (S.start != null && !canStart(h, S.date, S.start, S.dur, busySet(h, S.date))) S.start = null; haptic('tap'); return render(); }
+    if (act === 'dur') {
+      S.dur += +v;
+      if (S.start != null && !canStart(h, S.date, S.start, S.dur, busySet(h, S.date))) { S.start = null; toast('Выбранное время не вмещает ' + S.dur + ' ч — выберите заново'); }
+      haptic('tap'); return render();
+    }
+    if (act === 'guests') {
+      S.guests += +v;
+      BATH.extras.forEach(function (x) { if (x.perGuest && S.extras[x.id] > S.guests) S.extras[x.id] = S.guests; });
+      haptic('tap'); return render();
+    }
+    if (act === 'slot') {
+      var k = +v, busy = busySet(h, S.date);
+      if (busy[k]) { haptic('warning'); return toast('Это время уже забронировано'); }
+      if (!canStart(h, S.date, k, S.dur, busy)) {
+        haptic('warning');
+        return toast(k < minStart(S.date) ? 'Это время уже прошло' : k + S.dur > BATH.close ? 'С ' + hh(k) + ' не успеем ' + S.dur + ' ч до закрытия' : 'С ' + hh(k) + ' на ' + S.dur + ' ч не получится — дальше занято');
+      }
+      S.start = k; haptic('tap'); return render();
+    }
+    if (act === 'ex') {
+      var id = t.getAttribute('data-id'), ex = BATH.extras.filter(function (x) { return x.id === id; })[0];
+      var q = Math.max(0, Math.min(extraMax(ex), (S.extras[id] || 0) + (+v)));
+      if (q) S.extras[id] = q; else delete S.extras[id];
+      haptic('tap'); return render();
+    }
+    if (act === 'contact') {
+      tg.requestContact(function (shared, res) {
+        var c = res && res.responseUnsafe && res.responseUnsafe.contact;
+        if (shared && c && c.phone_number) { S.phone = fmtPhone(String(c.phone_number)); haptic('success'); render(); }
+        else if (shared) toast('Номер отправлен в чат — впишите его здесь тоже');
+      });
+    }
+  });
+  app.addEventListener('input', function (e) {
+    var id = e.target.id;
+    if (id === 'f-name') S.name = e.target.value;
+    if (id === 'f-comment') S.comment = e.target.value;
+    if (id === 'f-phone') { var f = fmtPhone(e.target.value); if (e.inputType && e.inputType.indexOf('delete') === 0) S.phone = e.target.value; else { S.phone = f; e.target.value = f; } }
+    updateCTA();
+  });
+
+  // ---------- boot ----------
+  function applyTheme() {
+    var root = document.documentElement.style;
+    root.setProperty('--accent', BATH.accent || '#c8742b');
+    if (!inTG) return;
+    document.documentElement.classList.add('tg');
+    var p = tg.themeParams || {}, dark = tg.colorScheme === 'dark';
+    if (p.secondary_bg_color) root.setProperty('--bg', p.secondary_bg_color);
+    if (p.section_bg_color || p.bg_color) root.setProperty('--card', p.section_bg_color || p.bg_color);
+    if (p.text_color) root.setProperty('--text', p.text_color);
+    if (p.hint_color) root.setProperty('--hint', p.hint_color);
+    root.setProperty('--line', dark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.08)');
+    root.setProperty('--chip', dark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.05)');
+    root.setProperty('--busy', dark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)');
+    try { tg.setHeaderColor('secondary_bg_color'); tg.setBackgroundColor('secondary_bg_color'); } catch (e) {}
+  }
+  function start() {
+    if (!BATH || !BATH.halls) BATH = DEFAULT_BATH;
+    S.date = iso(new Date());
+    var u = inTG && tg.initDataUnsafe && tg.initDataUnsafe.user;
+    if (u) S.name = [u.first_name, u.last_name].filter(Boolean).join(' ');
+    applyTheme();
+    if (inTG) {
+      tg.MainButton.onClick(onMain);
+      tg.BackButton.onClick(function () { if (S.step > 1 && !S.done) go(S.step - 1); });
+    }
+    render(true);
+  }
+
+  if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
+  if (!BATH && API) {
+    var ctl = window.AbortController ? new AbortController() : null;
+    if (ctl) setTimeout(function () { ctl.abort(); }, 4000);
+    fetch(API + '/banya-config?b=' + encodeURIComponent(qs.get('b') || ''), ctl ? { signal: ctl.signal } : {})
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { if (j && j.halls) BATH = j; })
+      .catch(function () {})
+      .then(start);
+  } else start();
+})();
+</script>
+</body>
+</html>
