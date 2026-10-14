@@ -4,7 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <title>Ключ · Недвижимость</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+  // Скрипт Telegram нужен только внутри мини-приложения: грузим его асинхронно и ждём не дольше 3 секунд.
+  // В РФ telegram.org без VPN недоступен, и обычный <script src> держал бы страницу пустой в браузере.
+  function whenTelegram(cb) {
+    var done = false;
+    function go() { if (!done) { done = true; cb(); } }
+    if (!/tgWebApp/.test(location.hash + location.search)) return go();
+    var s = document.createElement('script');
+    s.src = 'https://telegram.org/js/telegram-web-app.js';
+    s.onload = s.onerror = go;
+    document.head.appendChild(s);
+    setTimeout(go, 3000);
+  }
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -207,7 +220,7 @@
 <div id="sheet" hidden></div>
 <div class="toast" id="toast"></div>
 <script>
-(function () {
+whenTelegram(function () {
   'use strict';
   var tg = window.Telegram && window.Telegram.WebApp, inTG = !!(tg && tg.initData), qs = new URLSearchParams(location.search);
   var API = (qs.get('api') || '').replace(/\/+$/, ''), D = null;
@@ -638,7 +651,7 @@
       var id = qs.get('id'); if (id && L(id)) { S.deal = L(id).deal; render(); openDetail(id); }
     });
   });
-})();
+});
 </script>
 </body>
 </html>
