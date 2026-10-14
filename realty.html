@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Ключ · Недвижимость</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root { --bg:#f5f3ee; --card:#fff; --text:#14213a; --hint:#7b8294; --line:rgba(20,33,58,.09); --chip:#ebe8e1; --gold:#b8893a; --gold-soft:rgba(184,137,58,.12);
+    --navy:#14213a; --on-gold:#fff; --ok:#3f8f5a; --shadow:0 1px 2px rgba(20,33,58,.05),0 8px 24px rgba(20,33,58,.07); --r:18px; }
+  .dark { --bg:#0c1220; --card:#151e33; --text:#eef1f6; --hint:#8d96aa; --line:rgba(255,255,255,.08); --chip:#1e2942; --gold:#d6ad5c; --gold-soft:rgba(214,173,92,.15); --shadow:none; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; background:var(--bg); color:var(--text); }
+  body { font:15px/1.45 Manrope, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing:antialiased; overscroll-behavior:none; }
+  button { font:inherit; color:inherit; background:none; border:0; padding:0; cursor:pointer; }
+  input { font:inherit; color:inherit; }
+  [hidden] { display:none !important; }
+  .wrap { max-width:560px; margin:0 auto; padding:0 16px; }
+
+  /* шапка */
+  .top { position:sticky; top:0; z-index:5; background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+  .top .wrap { display:flex; align-items:center; gap:10px; height:56px; }
+  .logo { width:34px; height:34px; border-radius:10px; background:var(--navy); display:grid; place-items:center; flex:0 0 auto; }
+  .brand b { display:block; font-size:16px; font-weight:800; letter-spacing:-.01em; }
+  .brand span { display:block; font-size:12px; color:var(--hint); margin-top:-2px; }
+  .top .cnt { margin-left:auto; font-size:12px; color:var(--hint); text-align:right; }
+
+  /* нижняя навигация */
+  .tabs { position:fixed; left:0; right:0; bottom:0; z-index:6; background:var(--card); border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom); }
+  .tabs .wrap { display:grid; grid-template-columns:repeat(4,1fr); height:60px; padding:0 6px; }
+  .tab { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:11px; font-weight:600; color:var(--hint); position:relative; }
+  .tab svg { width:22px; height:22px; }
+  .tab.on { color:var(--gold); }
+  .tab .n { position:absolute; top:7px; left:calc(50% + 6px); min-width:16px; height:16px; padding:0 4px; border-radius:8px; background:var(--gold); color:#fff; font-size:10px; line-height:16px; text-align:center; }
+  main { padding-bottom:90px; }
+
+  /* фильтры */
+  .seg { display:grid; grid-auto-flow:column; grid-auto-columns:1fr; background:var(--chip); border-radius:12px; padding:3px; margin:14px 0 10px; }
+  .seg button { height:36px; border-radius:10px; font-weight:700; font-size:14px; color:var(--hint); transition:.2s; }
+  .seg button.on { background:var(--card); color:var(--text); box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  .chips { display:flex; gap:7px; overflow-x:auto; margin:0 -16px 8px; padding:2px 16px; scrollbar-width:none; }
+  .chips::-webkit-scrollbar { display:none; }
+  .chip { flex:0 0 auto; height:34px; padding:0 14px; border-radius:17px; background:var(--card); border:1px solid var(--line); font-size:13.5px; font-weight:600; white-space:nowrap; transition:.15s; }
+  .chip.on { background:var(--navy); border-color:var(--navy); color:#fff; }
+  .dark .chip.on { background:var(--gold); border-color:var(--gold); color:#14213a; }
+  .chip.x::after { content:"  ✕"; opacity:.6; }
+  .sep { flex:0 0 1px; background:var(--line); margin:6px 2px; }
+  .meta { display:flex; justify-content:space-between; align-items:center; margin:12px 2px 10px; font-size:13px; color:var(--hint); }
+  .meta b { color:var(--text); }
+  .meta button { color:var(--gold); font-weight:700; font-size:13px; }
+
+  /* карточки */
+  .card { background:var(--card); border-radius:var(--r); overflow:hidden; box-shadow:var(--shadow); border:1px solid var(--line); margin-bottom:14px; cursor:pointer; }
+  .gal { position:relative; aspect-ratio:16/10.5; background:var(--chip); }
+  .track { display:flex; height:100%; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; }
+  .track::-webkit-scrollbar { display:none; }
+  .track img { flex:0 0 100%; width:100%; height:100%; object-fit:cover; scroll-snap-align:start; display:block; }
+  .dots { position:absolute; left:0; right:0; bottom:9px; display:flex; justify-content:center; gap:5px; pointer-events:none; }
+  .dots i { width:6px; height:6px; border-radius:3px; background:rgba(255,255,255,.55); transition:.2s; }
+  .dots i.on { width:16px; background:#fff; }
+  .fav { position:absolute; top:10px; right:10px; width:38px; height:38px; border-radius:50%; background:rgba(15,20,35,.42); backdrop-filter:blur(6px); display:grid; place-items:center; color:#fff; font-size:18px; transition:transform .15s; }
+  .fav.on { color:#ff5a6e; background:rgba(255,255,255,.92); }
+  .fav:active { transform:scale(.88); }
+  .badge { position:absolute; top:12px; left:12px; font-size:11.5px; font-weight:700; padding:5px 9px; border-radius:8px; background:rgba(255,255,255,.92); color:#14213a; }
+  .info { padding:13px 15px 15px; }
+  .price { font-size:20px; font-weight:800; letter-spacing:-.01em; }
+  .price small { font-size:12.5px; font-weight:500; color:var(--hint); margin-left:6px; letter-spacing:0; }
+  .ttl { font-size:14.5px; font-weight:600; margin-top:3px; }
+  .addr { font-size:13px; color:var(--hint); margin-top:2px; }
+  .mort { display:inline-block; margin-top:9px; font-size:12.5px; font-weight:700; color:var(--gold); background:var(--gold-soft); padding:4px 9px; border-radius:8px; }
+  .promo { display:flex; align-items:center; gap:12px; width:100%; text-align:left; padding:14px 15px; margin-bottom:14px; border-radius:var(--r); background:var(--navy); color:#fff; }
+  .promo b { display:block; font-size:15px; } .promo span { font-size:12.5px; opacity:.75; } .promo i { margin-left:auto; font-style:normal; color:var(--gold); font-size:20px; }
+  .ghost { width:100%; height:46px; border-radius:14px; border:1.5px dashed var(--line); color:var(--hint); font-weight:700; font-size:13.5px; margin:4px 0 10px; }
+  .empty { text-align:center; padding:50px 20px; color:var(--hint); }
+  .empty .em { font-size:44px; margin-bottom:10px; }
+  .empty b { display:block; color:var(--text); font-size:17px; margin-bottom:6px; }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; height:48px; padding:0 20px; border-radius:14px; background:var(--gold); color:var(--on-gold); font-weight:800; font-size:15px; }
+  .btn.full { width:100%; } .btn.sec { background:var(--chip); color:var(--text); } .btn:disabled { opacity:.45; }
+  .skel { height:260px; border-radius:var(--r); margin-bottom:14px; background:linear-gradient(100deg,var(--chip) 30%,var(--card) 50%,var(--chip) 70%); background-size:300% 100%; animation:sk 1.2s infinite; }
+  @keyframes sk { to { background-position:-150% 0 } }
+
+  /* страница объекта */
+  #detail { position:fixed; inset:0; z-index:10; background:var(--bg); overflow-y:auto; animation:slide .28s cubic-bezier(.2,.8,.2,1); }
+  @keyframes slide { from { transform:translateY(24px); opacity:.4 } to { transform:none; opacity:1 } }
+  .d-gal { position:relative; height:min(62vw,340px); background:#000; }
+  .d-gal .count { position:absolute; right:12px; bottom:12px; font-size:12px; font-weight:700; color:#fff; background:rgba(0,0,0,.5); padding:4px 9px; border-radius:8px; }
+  .d-gal .back { position:absolute; top:12px; left:12px; width:38px; height:38px; border-radius:50%; background:rgba(15,20,35,.42); color:#fff; font-size:20px; }
+  .d-body { padding:16px 16px 120px; max-width:560px; margin:0 auto; }
+  .d-price { font-size:27px; font-weight:800; letter-spacing:-.02em; }
+  .d-sub { display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:13px; color:var(--hint); margin-top:2px; }
+  .link { color:var(--gold); font-weight:700; }
+  .d-body h1 { font-size:19px; margin:12px 0 4px; letter-spacing:-.01em; }
+  .params { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:16px 0 6px; }
+  .param { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px 12px; }
+  .param span { display:block; font-size:11.5px; color:var(--hint); font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
+  .param b { font-size:16px; }
+  h3 { font-size:15px; margin:22px 0 10px; }
+  .feat { list-style:none; margin:0; padding:0; }
+  .feat li { padding:7px 0 7px 28px; position:relative; border-bottom:1px solid var(--line); font-size:14px; }
+  .feat li::before { content:"✓"; position:absolute; left:2px; top:6px; width:18px; height:18px; border-radius:50%; background:var(--gold-soft); color:var(--gold); font-size:11px; font-weight:800; display:grid; place-items:center; }
+  .slots-row { display:flex; gap:7px; flex-wrap:wrap; }
+  .agent { display:flex; gap:12px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px; }
+  .ava { width:48px; height:48px; border-radius:50%; background:var(--navy); color:var(--gold); display:grid; place-items:center; font-weight:800; flex:0 0 auto; }
+  .agent b { display:block; font-size:15px; } .agent span { font-size:12.5px; color:var(--hint); }
+  .agent .q { margin-left:auto; height:36px; padding:0 12px; border-radius:10px; background:var(--gold-soft); color:var(--gold); font-weight:700; font-size:13px; flex:0 0 auto; }
+  .acts { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:16px; }
+  .act { height:62px; border-radius:14px; background:var(--card); border:1px solid var(--line); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; font-size:12px; font-weight:700; }
+  .act i { font-style:normal; font-size:18px; } .act.on { border-color:var(--gold); color:var(--gold); }
+  .similar { display:flex; gap:10px; overflow-x:auto; margin:0 -16px; padding:0 16px 4px; scrollbar-width:none; }
+  .similar::-webkit-scrollbar { display:none; }
+  .mini { flex:0 0 160px; background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; text-align:left; }
+  .mini img { width:100%; height:100px; object-fit:cover; display:block; }
+  .mini div { padding:8px 10px 10px; font-size:12px; color:var(--hint); } .mini b { display:block; color:var(--text); font-size:14px; }
+  .cta-fix { position:fixed; left:0; right:0; bottom:0; padding:12px 16px calc(12px + env(safe-area-inset-bottom)); background:linear-gradient(transparent, var(--bg) 30%); z-index:12; }
+  .cta-fix .btn { width:100%; max-width:528px; display:flex; margin:0 auto; }
+
+  /* нижний лист */
+  #sheet { position:fixed; inset:0; z-index:20; background:rgba(8,12,22,.5); display:flex; align-items:flex-end; justify-content:center; animation:fade .2s; }
+  @keyframes fade { from { opacity:0 } }
+  .sheet { width:100%; max-width:560px; max-height:90vh; overflow-y:auto; background:var(--bg); border-radius:24px 24px 0 0; padding:10px 16px calc(100px + env(safe-area-inset-bottom)); animation:up .3s cubic-bezier(.2,.8,.2,1); }
+  @keyframes up { from { transform:translateY(60px) } }
+  .grab { width:40px; height:5px; border-radius:3px; background:var(--line); margin:0 auto 12px; }
+  .sheet h2 { font-size:21px; margin:0 0 2px; letter-spacing:-.01em; }
+  .sheet .sub { font-size:13px; color:var(--hint); }
+  .sheet h4 { font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:var(--hint); margin:18px 2px 8px; }
+  .days { display:flex; gap:7px; overflow-x:auto; margin:0 -16px; padding:2px 16px; scrollbar-width:none; }
+  .days::-webkit-scrollbar { display:none; }
+  .day { flex:0 0 62px; padding:9px 0; border-radius:14px; background:var(--card); border:1px solid var(--line); text-align:center; }
+  .day small { display:block; font-size:11px; color:var(--hint); font-weight:700; text-transform:uppercase; }
+  .day b { font-size:19px; } .day em { display:block; font-style:normal; font-size:10.5px; color:var(--ok); font-weight:700; }
+  .day.on { background:var(--navy); border-color:var(--navy); color:#fff; } .day.on small, .day.on em { color:rgba(255,255,255,.75); }
+  .dark .day.on { background:var(--gold); border-color:var(--gold); color:#14213a; }
+  .day:disabled { opacity:.35; }
+  .times { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
+  .time { height:42px; border-radius:12px; background:var(--card); border:1px solid var(--line); font-weight:700; }
+  .time.on { background:var(--gold); border-color:var(--gold); color:#fff; }
+  .field { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:9px 13px; margin-bottom:8px; display:block; }
+  .field span { display:block; font-size:11px; color:var(--hint); font-weight:700; text-transform:uppercase; letter-spacing:.06em; }
+  .field input, .field textarea { width:100%; border:0; outline:0; background:transparent; font-size:16px; padding:3px 0; resize:none; font-family:inherit; color:var(--text); }
+  .tgph { width:100%; height:42px; border-radius:12px; background:var(--gold-soft); color:var(--gold); font-weight:700; font-size:14px; margin-bottom:8px; }
+  .consent { display:flex; gap:10px; align-items:flex-start; font-size:13px; color:var(--hint); margin-top:6px; cursor:pointer; }
+  .consent .box { flex:0 0 22px; height:22px; border-radius:7px; border:1.5px solid var(--hint); display:grid; place-items:center; color:#fff; font-size:13px; font-weight:800; }
+  .consent.on .box { background:var(--gold); border-color:var(--gold); }
+  details.terms { font-size:12.5px; color:var(--hint); margin:8px 0 0 32px; } details.terms summary { color:var(--gold); font-weight:700; cursor:pointer; }
+  .done { text-align:center; padding:26px 6px 10px; }
+  .done .ic { width:80px; height:80px; border-radius:50%; background:var(--gold); color:#fff; display:grid; place-items:center; font-size:38px; margin:0 auto 16px; animation:pop .5s cubic-bezier(.2,1.4,.4,1); }
+  @keyframes pop { from { transform:scale(.4); opacity:0 } }
+  .done h2 { font-size:23px; } .done p { color:var(--hint); margin:8px auto 18px; max-width:340px; }
+  .summary { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px 14px; margin-top:12px; font-size:14px; }
+  .summary div { display:flex; justify-content:space-between; gap:10px; padding:4px 0; } .summary span { color:var(--hint); }
+
+  /* ипотека */
+  .mcard { background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:16px; margin-top:14px; box-shadow:var(--shadow); }
+  .rng { margin-bottom:16px; }
+  .rng .lbl { display:flex; justify-content:space-between; font-size:13px; color:var(--hint); font-weight:600; margin-bottom:6px; }
+  .rng .lbl b { color:var(--text); font-size:15px; }
+  input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:6px; border-radius:3px; background:linear-gradient(var(--gold),var(--gold)) 0/var(--p,50%) 100% no-repeat, var(--chip); outline:0; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:24px; height:24px; border-radius:50%; background:#fff; border:3px solid var(--gold); box-shadow:0 2px 6px rgba(0,0,0,.2); }
+  input[type=range]::-moz-range-thumb { width:20px; height:20px; border-radius:50%; background:#fff; border:3px solid var(--gold); }
+  .result { background:var(--navy); color:#fff; border-radius:var(--r); padding:18px; margin-top:14px; }
+  .result small { opacity:.7; font-size:12.5px; } .result .big { font-size:32px; font-weight:800; letter-spacing:-.02em; color:#f0cd86; }
+  .result .rowx { display:flex; justify-content:space-between; font-size:13.5px; padding:5px 0; border-top:1px solid rgba(255,255,255,.1); } .result .rowx span { opacity:.7; }
+  .note { font-size:12px; color:var(--hint); margin:10px 2px; }
+
+  /* избранное и сравнение */
+  .row { display:flex; gap:12px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:8px; margin-bottom:8px; }
+  .row img { width:84px; height:64px; border-radius:11px; object-fit:cover; flex:0 0 auto; }
+  .row .t { flex:1; min-width:0; cursor:pointer; } .row .t b { display:block; font-size:15px; } .row .t span { font-size:12.5px; color:var(--hint); display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cmpbox { width:28px; height:28px; border-radius:8px; border:1.5px solid var(--hint); display:grid; place-items:center; flex:0 0 auto; font-weight:800; color:#fff; font-size:13px; }
+  .cmpbox.on { background:var(--gold); border-color:var(--gold); }
+  .cmp { width:100%; border-collapse:collapse; font-size:13px; background:var(--card); border-radius:16px; overflow:hidden; margin-top:12px; }
+  .cmp th, .cmp td { padding:9px 8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+  .cmp th { color:var(--hint); font-weight:600; font-size:12px; width:90px; }
+  .cmp td.best { color:var(--ok); font-weight:800; }
+  .cmp img { width:100%; height:60px; object-fit:cover; border-radius:8px; }
+
+  /* карта */
+  #mapwrap { position:fixed; top:57px; left:0; right:0; bottom:calc(60px + env(safe-area-inset-bottom)); z-index:2; }
+  #map { position:absolute; inset:0; background:var(--chip); }
+  .pin { background:var(--card); color:var(--text); border:2px solid var(--gold); border-radius:10px; padding:3px 7px; font-weight:800; font-size:12px; white-space:nowrap; box-shadow:0 3px 10px rgba(0,0,0,.25); transform:translate(-50%,-50%); display:inline-block; }
+  .pin.on { background:var(--gold); color:#fff; }
+  .leaflet-div-icon { background:none; border:0; }
+  .leaflet-tile-pane { filter:saturate(.75) contrast(.95); }
+  .dark .leaflet-tile-pane { filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.6); }
+  #mapcard { position:absolute; left:12px; right:12px; bottom:12px; z-index:500; }
+  #mapcard .row { box-shadow:0 8px 24px rgba(0,0,0,.25); margin:0; }
+  .mapchips { position:absolute; top:10px; left:0; right:0; z-index:500; }
+  .toast { position:fixed; left:50%; bottom:90px; transform:translate(-50%,20px); opacity:0; transition:.25s; pointer-events:none; background:rgba(20,33,58,.95); color:#fff; padding:11px 16px; border-radius:12px; font-size:14px; z-index:40; max-width:calc(100% - 32px); text-align:center; }
+  .toast.show { opacity:1; transform:translate(-50%,0); }
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="logo"><svg width="20" height="22" viewBox="0 0 20 24" fill="none" stroke="#d6ad5c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9 10 2l8 7M4 8v7h12V8"/><circle cx="10" cy="10.5" r="2.4"/><path d="M10 13v9M10 18.5h3M10 21.5h2.2"/></svg></div>
+  <div class="brand"><b>Ключ</b><span id="city">Недвижимость</span></div>
+  <div class="cnt" id="cnt"></div>
+</div></header>
+<main id="view"><div class="wrap"><div class="skel"></div><div class="skel"></div></div></main>
+<div id="mapwrap" hidden><div id="map"></div><div class="mapchips"><div class="wrap"><div class="seg" id="mapseg" style="margin:0;box-shadow:0 4px 14px rgba(0,0,0,.15)"></div></div></div><div id="mapcard"></div></div>
+<nav class="tabs"><div class="wrap" id="tabs"></div></nav>
+<div id="detail" hidden></div>
+<div id="sheet" hidden></div>
+<div class="toast" id="toast"></div>
+<script>
+(function () {
+  'use strict';
+  var tg = window.Telegram && window.Telegram.WebApp, inTG = !!(tg && tg.initData), qs = new URLSearchParams(location.search);
+  var API = (qs.get('api') || '').replace(/\/+$/, ''), D = null;
+  var S = { tab: 'catalog', deal: 'sale', type: 'all', rooms: 'all', budget: null, priceMax: null, dist: 'all', sort: 'price',
+    favs: [], cmp: [], detail: null, sheet: null, book: { fmt: 'o' }, lead: null, est: { deal: 'sale', type: 'flat', dist: 'center', area: 60 },
+    mort: { price: 8000000, down: 20, term: 20, prog: 'fam' }, me: { name: '', phone: '', consent: false }, mapSel: null };
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---------- утилиты ----------
+  function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function money(n) { return Math.round(n).toLocaleString('ru-RU') + ' ₽'; }
+  function mln(n) { return n >= 1e6 ? (Math.round(n / 1e5) / 10).toLocaleString('ru-RU') + ' млн' : Math.round(n / 1000) + ' тыс'; }
+  function plural(n, a, b, c) { var m = n % 10, k = n % 100; return m === 1 && k !== 11 ? a : m >= 2 && m <= 4 && (k < 12 || k > 14) ? b : c; }
+  function hh(h) { return String(h).padStart(2, '0') + ':00'; }
+  function dt(iso) { var p = iso.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function dayShort(iso) { if (iso === D.today) return 'Сег'; var t = new Date(dt(D.today).getTime() + 864e5); if (dt(iso).getTime() === t.getTime()) return 'Завт'; return dt(iso).toLocaleDateString('ru-RU', { weekday: 'short' }); }
+  function dLabel(iso) { return dt(iso).toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'long' }); }
+  function haptic(k) { if (!inTG || !tg.HapticFeedback) return; try { k === 'tap' ? tg.HapticFeedback.selectionChanged() : tg.HapticFeedback.notificationOccurred(k); } catch (e) {} }
+  var tt; function toast(t) { var el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(tt); tt = setTimeout(function () { el.classList.remove('show'); }, 2400); }
+  function L(id) { return D.listings.find(function (x) { return x.id === id; }); }
+  function distName(k) { return (D.districts[k] || {}).name || ''; }
+  function kindTitle(l) { return l.type === 'house' ? 'Дом' : l.rooms === 0 ? 'Студия' : l.rooms + '-комн. квартира'; }
+  function title(l) { return l.type === 'house' ? 'Дом ' + l.area + ' м² · участок ' + l.land + ' сот.' : kindTitle(l) + ' · ' + l.area + ' м²' + (l.floor ? ' · ' + l.floor + '/' + l.floors + ' эт.' : ''); }
+  function priceTxt(l) { return l.deal === 'rent' ? money(l.price) + '/мес' : money(l.price); }
+  function rate(id) { var p = D.mortgage.find(function (x) { return x.id === id; }) || D.mortgage[0]; return p.rate; }
+  function payment(price, down, term, r) { var loan = price * (1 - down / 100), i = r / 1200, n = term * 12; return i ? loan * i / (1 - Math.pow(1 + i, -n)) : loan / n; }
+  function quickPay(l) { return payment(l.price, 20, 20, rate('fam')); }
+
+  // ---------- хранилище: Telegram CloudStorage (синхронно на всех устройствах) или localStorage ----------
+  var cloud = inTG && tg.CloudStorage && tg.isVersionAtLeast && tg.isVersionAtLeast('6.9');
+  function sget(keys, cb) {
+    if (cloud) { try { tg.CloudStorage.getItems(keys, function (e, v) { cb(e ? {} : (v || {})); }); return; } catch (e) {} }
+    var o = {}; keys.forEach(function (k) { try { o[k] = localStorage.getItem('kl_' + k) || ''; } catch (e) {} }); cb(o);
+  }
+  function sset(k, v) { if (cloud) { try { tg.CloudStorage.setItem(k, v); return; } catch (e) {} } try { localStorage.setItem('kl_' + k, v); } catch (e) {} }
+
+  function post(payload) {
+    payload.initData = inTG ? tg.initData : ''; payload.user = inTG && tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
+    if (!API) return Promise.resolve({ ok: true });
+    return fetch(API + '/realty-app', { method: 'POST', body: new URLSearchParams({ data: JSON.stringify(payload) }) })
+      .then(function (r) { return r.ok ? r.json() : { ok: false }; }).catch(function () { return { ok: false }; });
+  }
+  var favTimer; function saveFavs() { sset('fav', JSON.stringify(S.favs)); clearTimeout(favTimer); favTimer = setTimeout(function () { if (inTG) post({ type: 'fav', ids: S.favs }); }, 1500); }
+
+  // ---------- каталог ----------
+  var BUDGETS = { sale: [['до 6 млн', 0, 6e6], ['6–10 млн', 6e6, 10e6], ['10–15 млн', 10e6, 15e6], ['от 15 млн', 15e6, 1e10]], rent: [['до 30 тыс', 0, 3e4], ['30–50 тыс', 3e4, 5e4], ['от 50 тыс', 5e4, 1e9]] };
+  function filtered(ignoreDist) {
+    var b = S.budget != null ? BUDGETS[S.deal][S.budget] : null;
+    var res = D.listings.filter(function (l) {
+      return l.deal === S.deal && (S.type === 'all' || l.type === S.type) &&
+        (S.rooms === 'all' || l.type === 'house' || (S.rooms === 4 ? l.rooms >= 4 : l.rooms === S.rooms)) &&
+        (!b || (l.price >= b[1] && l.price < b[2])) && (!S.priceMax || l.price <= S.priceMax) && (ignoreDist || S.dist === 'all' || l.dist === S.dist);
+    });
+    var key = S.sort; res.sort(function (a, z) { return key === 'price' ? a.price - z.price : key === '-price' ? z.price - a.price : key === 'area' ? z.area - a.area : (a.price / a.area) - (z.price / z.area); });
+    return res;
+  }
+  var SORTS = [['price', 'сначала дешевле'], ['-price', 'сначала дороже'], ['area', 'по площади'], ['m2', 'по цене за м²']];
+  function chip(a, v, on, label, cls) { return '<button class="chip' + (on ? ' on' : '') + (cls ? ' ' + cls : '') + '" data-a="' + a + '" data-v="' + esc(v) + '">' + label + '</button>'; }
+  function gallery(l, cls) {
+    return '<div class="gal' + (cls ? ' ' + cls : '') + '"><div class="track" data-track>' + l.photos.map(function (p, i) { return '<img src="' + esc(p.replace('w=1280', 'w=900')) + '" alt="" loading="' + (i ? 'lazy' : 'eager') + '" draggable="false">'; }).join('') + '</div>' +
+      (l.photos.length > 1 ? '<div class="dots">' + l.photos.map(function (_, i) { return '<i' + (i ? '' : ' class="on"') + '></i>'; }).join('') + '</div>' : '') +
+      (l.year >= 2024 && l.type === 'flat' ? '<span class="badge">Новостройка</span>' : l.deal === 'rent' ? '<span class="badge">Без комиссии</span>' : '') +
+      '<button class="fav' + (S.favs.indexOf(l.id) >= 0 ? ' on' : '') + '" data-a="fav" data-v="' + l.id + '" aria-label="В избранное">' + (S.favs.indexOf(l.id) >= 0 ? '♥' : '♡') + '</button></div>';
+  }
+  function cardHTML(l) {
+    return '<article class="card" data-a="open" data-v="' + l.id + '">' + gallery(l) + '<div class="info">' +
+      '<div class="price">' + priceTxt(l) + (l.deal === 'sale' ? '<small>' + money(l.price / l.area) + '/м²</small>' : '') + '</div>' +
+      '<div class="ttl">' + title(l) + '</div><div class="addr">' + esc(distName(l.dist)) + ' · ' + esc(l.addr) + '</div>' +
+      (l.deal === 'sale' ? '<span class="mort">≈ ' + money(quickPay(l)) + '/мес в ипотеку</span>' : '') + '</div></article>';
+  }
+  function catalogHTML() {
+    var res = filtered(), h = '<div class="wrap"><div class="seg">' + [['sale', 'Купить'], ['rent', 'Снять']].map(function (d) { return '<button class="' + (S.deal === d[0] ? 'on' : '') + '" data-a="deal" data-v="' + d[0] + '">' + d[1] + '</button>'; }).join('') + '</div>';
+    h += '<div class="chips">' + (S.deal === 'sale' ? chip('type', 'all', S.type === 'all', 'Все') + chip('type', 'flat', S.type === 'flat', 'Квартиры') + chip('type', 'house', S.type === 'house', 'Дома') + '<span class="sep"></span>' : '') +
+      (S.type !== 'house' ? [['all', 'Любые'], [0, 'Студия'], [1, '1 комн'], [2, '2 комн'], [3, '3 комн'], [4, '4+']].map(function (r) { return chip('rooms', r[0], S.rooms === r[0], r[1]); }).join('') : '') + '</div>';
+    h += '<div class="chips">' + (S.priceMax ? chip('pmax', '', true, 'до ' + mln(S.priceMax) + ' ₽', 'x') : '') + BUDGETS[S.deal].map(function (b, i) { return chip('budget', i, S.budget === i, b[0]); }).join('') + '</div>';
+    h += '<div class="chips">' + chip('dist', 'all', S.dist === 'all', 'Все районы') + Object.keys(D.districts).map(function (k) { return chip('dist', k, S.dist === k, D.districts[k].name); }).join('') + '</div>';
+    var srt = SORTS.find(function (x) { return x[0] === S.sort; });
+    h += '<div class="meta"><span>Найдено <b>' + res.length + '</b> ' + plural(res.length, 'объект', 'объекта', 'объектов') + '</span><button data-a="sort">' + srt[1] + ' ▾</button></div>';
+    if (S.deal === 'sale') h += '<button class="promo" data-a="est"><div><b>Продаёте квартиру или дом?</b><span>Оценка по рынку района — за 30 секунд</span></div><i>→</i></button>';
+    if (!res.length) {
+      var near = filtered(true);
+      h += '<div class="empty"><div class="em">🔍</div><b>Точных совпадений нет</b>Попробуйте другой район или бюджет' + (near.length ? '. В других районах есть ' + near.length + ' ' + plural(near.length, 'вариант', 'варианта', 'вариантов') + ':' : '.') + '</div>' + near.map(cardHTML).join('');
+    } else h += res.map(cardHTML).join('');
+    h += '<button class="ghost" data-a="sub">🔔 Сообщать о новых объектах по этому фильтру</button></div>';
+    return h;
+  }
+
+  // ---------- избранное и сравнение ----------
+  function favHTML() {
+    var list = S.favs.map(L).filter(Boolean);
+    if (!list.length) return '<div class="wrap"><div class="empty"><div class="em">♡</div><b>Здесь будут понравившиеся объекты</b>Нажимайте ♡ на карточках — избранное сохранится и в чате с ботом.<br><br><button class="btn" data-a="tab" data-v="catalog">Открыть каталог</button></div></div>';
+    var h = '<div class="wrap"><h3 style="margin-top:18px">Избранное · ' + list.length + '</h3>' + list.map(function (l) {
+      var on = S.cmp.indexOf(l.id) >= 0;
+      return '<div class="row"><img src="' + esc(l.photos[0].replace('w=1280', 'w=300')) + '" alt=""><div class="t" data-a="open" data-v="' + l.id + '"><b>' + priceTxt(l) + '</b><span>' + title(l) + '</span><span>' + esc(distName(l.dist)) + '</span></div>' +
+        '<button class="cmpbox' + (on ? ' on' : '') + '" data-a="cmp" data-v="' + l.id + '" aria-label="Сравнить">' + (on ? '✓' : '') + '</button></div>';
+    }).join('');
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px"><button class="btn sec" data-a="sharefav">🔗 Поделиться</button><button class="btn" data-a="cmpgo"' + (S.cmp.length < 2 ? ' disabled' : '') + '>⚖️ Сравнить ' + (S.cmp.length || '') + '</button></div>';
+    h += '<p class="note">Отметьте 2–3 объекта, чтобы сравнить. Подборкой удобно поделиться с семьёй — каждый откроет её в боте.</p>';
+    if (S.cmp.length >= 2 && S.showCmp) h += cmpHTML();
+    return h + '</div>';
+  }
+  function cmpHTML() {
+    var ls = S.cmp.map(L).filter(Boolean);
+    var rowsDef = [['Цена', function (l) { return l.price; }, priceTxt, 'min'], ['За м²', function (l) { return l.price / l.area; }, function (l) { return money(l.price / l.area); }, 'min'],
+      ['Площадь', function (l) { return l.area; }, function (l) { return l.area + ' м²'; }, 'max'], ['Комнат', function (l) { return l.rooms; }, function (l) { return l.rooms === 0 ? 'студия' : l.rooms; }, 'max'],
+      ['Этаж', null, function (l) { return l.floor ? l.floor + '/' + l.floors : '—'; }], ['Год', function (l) { return l.year; }, function (l) { return l.year; }, 'max'],
+      ['Район', null, function (l) { return esc(distName(l.dist)); }], ['Платёж', function (l) { return l.deal === 'sale' ? quickPay(l) : l.price; }, function (l) { return l.deal === 'sale' ? '≈ ' + money(quickPay(l)) : money(l.price); }, 'min']];
+    var h = '<table class="cmp"><tr><th></th>' + ls.map(function (l) { return '<td data-a="open" data-v="' + l.id + '" style="cursor:pointer"><img src="' + esc(l.photos[0].replace('w=1280', 'w=300')) + '" alt=""></td>'; }).join('') + '</tr>';
+    rowsDef.forEach(function (r) {
+      var vals = r[1] ? ls.map(r[1]) : null, best = vals ? (r[3] === 'min' ? Math.min.apply(null, vals) : Math.max.apply(null, vals)) : null;
+      h += '<tr><th>' + r[0] + '</th>' + ls.map(function (l, i) { return '<td class="' + (vals && vals[i] === best && ls.length > 1 ? 'best' : '') + '">' + r[2](l) + '</td>'; }).join('') + '</tr>';
+    });
+    return h + '</table><p class="note">Зелёным — лучшее значение в строке. Платёж — при взносе 20% на 20 лет по семейной ипотеке.</p>';
+  }
+
+  // ---------- ипотека ----------
+  function mortHTML() {
+    var m = S.mort, r = rate(m.prog), pay = payment(m.price, m.down, m.term, r), loan = m.price * (1 - m.down / 100), over = pay * m.term * 12 - loan;
+    function rng(id, min, max, step, val, label, shown) { return '<div class="rng"><div class="lbl"><span>' + label + '</span><b id="' + id + '-v">' + shown + '</b></div><input type="range" id="' + id + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + val + '" style="--p:' + ((val - min) / (max - min) * 100) + '%"></div>'; }
+    return '<div class="wrap"><h3 style="margin-top:18px">Ипотечный калькулятор</h3><div class="mcard">' +
+      rng('m-price', 2e6, 30e6, 1e5, m.price, 'Стоимость', money(m.price)) + rng('m-down', 10, 90, 5, m.down, 'Первый взнос', m.down + '% · ' + money(m.price * m.down / 100)) +
+      rng('m-term', 5, 30, 1, m.term, 'Срок', m.term + ' ' + plural(m.term, 'год', 'года', 'лет')) +
+      '<div class="chips" style="margin-bottom:0">' + D.mortgage.map(function (p) { return chip('prog', p.id, m.prog === p.id, p.name + ' ' + String(p.rate).replace('.', ',') + '%'); }).join('') + '</div></div>' +
+      '<div class="result"><small>Ежемесячный платёж</small><div class="big" id="m-pay">' + money(pay) + '</div>' +
+      '<div class="rowx"><span>Кредит</span><b id="m-loan">' + money(loan) + '</b></div><div class="rowx"><span>Переплата</span><b id="m-over">' + money(over) + '</b></div>' +
+      '<div class="rowx"><span>Рекомендуемый доход семьи</span><b id="m-inc">от ' + money(pay * 2) + '</b></div></div>' +
+      '<div style="display:grid;gap:8px;margin-top:12px"><button class="btn full" data-a="mlead">📝 Заявка на одобрение — бесплатно</button><button class="btn sec full" data-a="mfind">🏠 Квартиры до ' + mln(m.price) + ' ₽</button></div>' +
+      '<p class="note">Расчёт примерный. Наш брокер подберёт банк и ставку, подаст заявку в несколько банков сразу и сопроводит сделку.</p></div>';
+  }
+  function updateMort() {
+    var m = S.mort, r = rate(m.prog), pay = payment(m.price, m.down, m.term, r), loan = m.price * (1 - m.down / 100);
+    var set = function (id, v) { var el = $(id); if (el) el.textContent = v; };
+    set('m-price-v', money(m.price)); set('m-down-v', m.down + '% · ' + money(m.price * m.down / 100)); set('m-term-v', m.term + ' ' + plural(m.term, 'год', 'года', 'лет'));
+    set('m-pay', money(pay)); set('m-loan', money(loan)); set('m-over', money(pay * m.term * 12 - loan)); set('m-inc', 'от ' + money(pay * 2));
+    var f = document.querySelector('[data-a="mfind"]'); if (f) f.textContent = '🏠 Квартиры до ' + mln(m.price) + ' ₽';
+  }
+
+  // ---------- карта ----------
+  var map = null, markers = {};
+  function mapRender() {
+    $('mapseg').innerHTML = [['sale', 'Купить'], ['rent', 'Снять']].map(function (d) { return '<button class="' + (S.deal === d[0] ? 'on' : '') + '" data-a="deal" data-v="' + d[0] + '">' + d[1] + '</button>'; }).join('');
+    if (!window.L) { $('map').innerHTML = '<div class="empty">Карта не загрузилась. Проверьте интернет.</div>'; return; }
+    if (!map) {
+      map = window.L.map('map', { zoomControl: false, attributionControl: true }).setView([55.03, 82.92], 11);
+      map.attributionControl.setPrefix(false);
+      window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+      map.on('click', function () { S.mapSel = null; mapCard(); drawPins(); });
+    }
+    setTimeout(function () { map.invalidateSize(); drawPins(true); }, 60);
+  }
+  function drawPins(fit) {
+    Object.keys(markers).forEach(function (k) { markers[k].remove(); }); markers = {};
+    var list = filtered(true), bounds = [];
+    list.forEach(function (l) {
+      var icon = window.L.divIcon({ className: '', html: '<span class="pin' + (S.mapSel === l.id ? ' on' : '') + '">' + (l.deal === 'rent' ? mln(l.price) : mln(l.price).replace(' млн', 'м')) + '</span>', iconSize: [0, 0] });
+      markers[l.id] = window.L.marker([l.lat, l.lng], { icon: icon }).addTo(map).on('click', function (e) { window.L.DomEvent.stopPropagation(e); S.mapSel = l.id; haptic('tap'); mapCard(); drawPins(); });
+      bounds.push([l.lat, l.lng]);
+    });
+    if (fit && bounds.length) map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
+  }
+  function mapCard() {
+    var l = S.mapSel && L(S.mapSel);
+    $('mapcard').innerHTML = l ? '<div class="row" data-a="open" data-v="' + l.id + '" style="cursor:pointer"><img src="' + esc(l.photos[0].replace('w=1280', 'w=300')) + '" alt=""><div class="t"><b>' + priceTxt(l) + '</b><span>' + title(l) + '</span><span>' + esc(distName(l.dist)) + ' · ' + esc(l.addr) + '</span></div><span style="color:var(--gold);font-size:22px;padding-right:6px">›</span></div>' : '';
+  }
+
+  // ---------- страница объекта ----------
+  function nextSlots(l, n) {
+    var out = []; Object.keys(D.avail[l.id] || {}).sort().forEach(function (d) { (D.avail[l.id][d] || []).forEach(function (h) { if (out.length < n) out.push([d, h]); }); }); return out;
+  }
+  function detailHTML(l) {
+    var ag = D.agents[l.agent] || {}, fav = S.favs.indexOf(l.id) >= 0, cmp = S.cmp.indexOf(l.id) >= 0;
+    var sim = D.listings.filter(function (x) { return x.id !== l.id && x.deal === l.deal && x.type === l.type; }).sort(function (a, z) { return Math.abs(a.price - l.price) - Math.abs(z.price - l.price); }).slice(0, 6);
+    var params = l.type === 'house' ? [['Площадь', l.area + ' м²'], ['Участок', l.land + ' сот.'], ['Комнат', l.rooms], ['Построен', l.year]]
+      : [['Площадь', l.area + ' м²'], ['Этаж', l.floor + ' из ' + l.floors], ['Дом', l.year + ' г.'], ['Район', esc(distName(l.dist))]];
+    var h = '<div class="d-gal">' + gallery(l, 'd') .replace('class="gal d"', 'class="gal" style="height:100%;aspect-ratio:auto"') + '<span class="count" id="gcount">1 / ' + l.photos.length + '</span>' +
+      (inTG ? '' : '<button class="back" data-a="close">‹</button>') + '</div><div class="d-body">' +
+      '<div class="d-price">' + priceTxt(l) + '</div><div class="d-sub">' + (l.deal === 'sale' ? '<span>' + money(l.price / l.area) + '/м²</span>·<button class="link" data-a="tomort" data-v="' + l.id + '">≈ ' + money(quickPay(l)) + '/мес в ипотеку ›</button>' : '<span>Залог и условия — у агента</span>') + '</div>' +
+      '<h1>' + (l.type === 'house' ? 'Дом ' + l.area + ' м²' : kindTitle(l) + ', ' + l.area + ' м²') + '</h1><div class="addr">📍 ' + esc(distName(l.dist)) + ', ' + esc(l.addr) + ' · <button class="link" data-a="onmap" data-v="' + l.id + '">на карте</button></div>' +
+      '<div class="params">' + params.map(function (p) { return '<div class="param"><span>' + p[0] + '</span><b>' + p[1] + '</b></div>'; }).join('') + '</div>' +
+      '<h3>Что важно знать</h3><ul class="feat">' + l.features.map(function (f) { return '<li>' + esc(f) + '</li>'; }).join('') + '</ul>';
+    var sl = nextSlots(l, 4);
+    if (sl.length) h += '<h3>Ближайшие показы</h3><div class="slots-row">' + sl.map(function (x) { return '<button class="chip" data-a="book" data-v="' + x[0] + '|' + x[1] + '">' + dayShort(x[0]) + ' ' + dt(x[0]).getDate() + ', ' + hh(x[1]) + '</button>'; }).join('') + '<button class="chip" data-a="book" data-v="">Другое время</button></div>';
+    h += '<h3>Покажет объект</h3><div class="agent"><div class="ava">' + esc((ag.name || '?').split(' ').map(function (w) { return w[0]; }).join('')) + '</div><div><b>' + esc(ag.name) + '</b><span>' + esc(ag.role) + '<br>' + ag.exp + ' лет опыта · ' + ag.deals + ' сделок</span></div><button class="q" data-a="ask" data-v="' + l.id + '">Вопрос</button></div>' +
+      '<div class="acts"><button class="act' + (fav ? ' on' : '') + '" data-a="fav" data-v="' + l.id + '"><i>' + (fav ? '♥' : '♡') + '</i>' + (fav ? 'Сохранено' : 'Сохранить') + '</button>' +
+      '<button class="act' + (cmp ? ' on' : '') + '" data-a="cmp" data-v="' + l.id + '"><i>⚖️</i>' + (cmp ? 'В сравнении' : 'Сравнить') + '</button><button class="act" data-a="share" data-v="' + l.id + '"><i>🔗</i>Поделиться</button></div>';
+    if (sim.length) h += '<h3>Похожие</h3><div class="similar">' + sim.map(function (x) { return '<button class="mini" data-a="open" data-v="' + x.id + '"><img src="' + esc(x.photos[0].replace('w=1280', 'w=400')) + '" alt="" loading="lazy"><div><b>' + (x.deal === 'rent' ? mln(x.price) + ' ₽/мес' : mln(x.price) + ' ₽') + '</b>' + title(x) + '</div></button>'; }).join('') + '</div>';
+    h += '</div>' + (inTG ? '' : '<div class="cta-fix"><button class="btn" data-a="book" data-v="">📅 Записаться на просмотр</button></div>');
+    return h;
+  }
+  function openDetail(id) {
+    var l = L(id); if (!l) return;
+    S.detail = id; $('detail').innerHTML = detailHTML(l); $('detail').hidden = false; $('detail').scrollTop = 0; haptic('tap'); syncTG();
+  }
+
+  // ---------- нижние листы: запись, заявка, оценка, готово ----------
+  function contactBlock() {
+    var canAsk = inTG && tg.requestContact && tg.isVersionAtLeast && tg.isVersionAtLeast('6.9');
+    return '<h4>Контакты</h4><label class="field"><span>Имя</span><input id="f-name" autocomplete="name" placeholder="Как к вам обращаться" value="' + esc(S.me.name) + '"></label>' +
+      '<label class="field"><span>Телефон</span><input id="f-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+7 900 000-00-00" value="' + esc(S.me.phone) + '"></label>' +
+      (canAsk && !S.me.phone ? '<button class="tgph" data-a="tgphone">Взять номер из Telegram</button>' : '') +
+      (S.me.consent ? '<div class="note">✓ Согласие на обработку персональных данных получено</div>' :
+        '<div class="consent' + (S.consentTick ? ' on' : '') + '" data-a="consent"><span class="box">' + (S.consentTick ? '✓' : '') + '</span><span>Согласен на обработку персональных данных для связи по заявке</span></div>' +
+        '<details class="terms"><summary>Условия</summary>Оператор: ' + esc(D.agency.operator) + '. Данные: имя, телефон, данные Telegram, сведения о заявках и показах. Цели: подбор, показы, консультации, напоминания. Хранение в России, до достижения целей (не дольше 3 лет) или до отзыва командой /revoke в боте. Третьим лицам не передаются, кроме случаев по закону. 152-ФЗ «О персональных данных».</details>');
+  }
+  function sheetHTML() {
+    var sh = S.sheet, h = '<div class="sheet" data-a="stop"><div class="grab"></div>';
+    if (sh === 'book') {
+      var l = L(S.detail), b = S.book, days = Object.keys(D.avail[l.id] || {}).sort();
+      h += '<h2>Запись на просмотр</h2><div class="sub">' + title(l) + ' · ' + esc(l.addr) + '</div>' +
+        '<div class="seg">' + [['o', '🚶 Приеду лично'], ['v', '🎥 Онлайн по видео']].map(function (f) { return '<button class="' + (b.fmt === f[0] ? 'on' : '') + '" data-a="fmt" data-v="' + f[0] + '">' + f[1] + '</button>'; }).join('') + '</div>' +
+        '<h4>День</h4><div class="days">' + days.map(function (d) { var n = (D.avail[l.id][d] || []).length; return '<button class="day' + (b.date === d ? ' on' : '') + '" data-a="bday" data-v="' + d + '"' + (n ? '' : ' disabled') + '><small>' + dayShort(d) + '</small><b>' + dt(d).getDate() + '</b><em>' + (n ? n + ' окн.' : 'нет') + '</em></button>'; }).join('') + '</div>';
+      if (b.date) h += '<h4>Время · ' + dLabel(b.date) + '</h4><div class="times">' + (D.avail[l.id][b.date] || []).map(function (x) { return '<button class="time' + (b.time === x ? ' on' : '') + '" data-a="btime" data-v="' + x + '">' + hh(x) + '</button>'; }).join('') + '</div>';
+      h += contactBlock() + (inTG ? '' : '<div style="margin-top:14px"><button class="btn full" data-a="main">' + ctaText() + '</button></div>');
+    } else if (sh === 'lead') {
+      var ld = S.lead;
+      h += '<h2>' + esc(ld.title) + '</h2><div class="sub">' + esc(ld.sub || 'Агент свяжется с вами в течение 15 минут') + '</div>' +
+        (ld.kind === 'q' ? '<h4>Ваш вопрос</h4><label class="field"><textarea id="f-q" rows="3" placeholder="Например: возможен ли торг?">' + esc(ld.text || '') + '</textarea></label>' : (ld.text ? '<div class="summary">' + esc(ld.text) + '</div>' : '')) +
+        contactBlock() + (inTG ? '' : '<div style="margin-top:14px"><button class="btn full" data-a="main">' + ctaText() + '</button></div>');
+    } else if (sh === 'est') {
+      var e = S.est, d = D.districts[e.dist], mid = e.deal === 'sale' ? e.area * d.m2 * (e.type === 'house' ? 0.85 : 1) : e.area * d.rent;
+      h += '<h2>Оценка вашего объекта</h2><div class="sub">По рынку района — точную цену агент назовёт после осмотра, бесплатно</div>' +
+        '<div class="seg">' + [['sale', 'Продать'], ['rent', 'Сдать']].map(function (x) { return '<button class="' + (e.deal === x[0] ? 'on' : '') + '" data-a="e-deal" data-v="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+        '<div class="chips">' + chip('e-type', 'flat', e.type === 'flat', 'Квартира') + chip('e-type', 'house', e.type === 'house', 'Дом') + '</div>' +
+        '<div class="chips">' + Object.keys(D.districts).map(function (k) { return chip('e-dist', k, e.dist === k, D.districts[k].name); }).join('') + '</div>' +
+        '<div class="rng" style="margin-top:12px"><div class="lbl"><span>Площадь</span><b id="e-area-v">' + e.area + ' м²</b></div><input type="range" id="e-area" min="20" max="250" step="1" value="' + e.area + '" style="--p:' + ((e.area - 20) / 230 * 100) + '%"></div>' +
+        '<div class="result"><small>' + (e.deal === 'sale' ? 'Цена продажи' : 'Аренда в месяц') + '</small><div class="big" id="e-res">' + estRange(mid, e.deal) + '</div>' +
+        '<div class="rowx"><span>' + (e.deal === 'sale' ? 'Средняя цена м² в районе' : 'Сдаём в среднем') + '</span><b>' + (e.deal === 'sale' ? money(d.m2) : 'за 5–7 дней') + '</b></div></div>' +
+        '<div style="margin-top:12px"><button class="btn full" data-a="estlead">📞 Получить точную оценку</button></div>';
+    } else if (sh === 'done') {
+      var dn = S.done;
+      h += '<div class="done"><div class="ic">✓</div><h2>' + esc(dn.title) + '</h2><p>' + esc(dn.text) + '</p>' + (dn.rows ? '<div class="summary">' + dn.rows + '</div>' : '') +
+        (dn.cal ? '<a class="btn sec full" style="margin-top:12px;text-decoration:none" href="' + esc(dn.cal) + '" target="_blank">📅 Добавить в календарь</a>' : '') +
+        (inTG ? '' : '<div style="margin-top:10px"><button class="btn full" data-a="close">Готово</button></div>') + '</div>';
+    }
+    return h + '</div>';
+  }
+  function estRange(mid, deal) { return deal === 'sale' ? mln(mid * 0.94).replace(' млн', '') + '–' + mln(mid * 1.06) + ' ₽' : Math.round(mid * 0.94 / 1000) + '–' + Math.round(mid * 1.06 / 1000) + ' тыс ₽'; }
+  function openSheet(name) {
+    // при перерисовке того же листа сохраняем прокрутку и фокус, чтобы выбор времени не «прыгал»
+    var old = $('sheet').querySelector('.sheet'), keep = S.sheet === name && old ? old.scrollTop : 0, focus = document.activeElement && document.activeElement.id;
+    S.sheet = name; $('sheet').innerHTML = sheetHTML(); $('sheet').hidden = false;
+    var nw = $('sheet').querySelector('.sheet'); if (nw) nw.scrollTop = keep;
+    if (keep && focus && $(focus)) $(focus).focus();
+    syncTG();
+  }
+  function closeTop() {
+    if (S.sheet) { S.sheet = null; $('sheet').hidden = true; $('sheet').innerHTML = ''; }
+    else if (S.detail) { S.detail = null; $('detail').hidden = true; $('detail').innerHTML = ''; if (S.tab === 'fav') render(); }
+    syncTG();
+  }
+
+  // ---------- главная кнопка Telegram ----------
+  function contactsOk() { return S.me.name.trim().length >= 2 && S.me.phone.replace(/\D/g, '').length >= 10 && (S.me.consent || S.consentTick); }
+  function ctaText() {
+    if (S.sheet === 'book') { var b = S.book; if (!b.date || b.time == null) return 'Выберите день и время'; if (!contactsOk()) return 'Укажите имя, телефон и согласие'; return 'Записаться · ' + dayShort(b.date) + ' ' + dt(b.date).getDate() + ', ' + hh(b.time); }
+    if (S.sheet === 'lead') return contactsOk() ? 'Отправить заявку' : 'Укажите имя, телефон и согласие';
+    if (S.sheet === 'done') return 'Вернуться в чат';
+    if (S.detail) return '📅 Записаться на просмотр';
+    return '';
+  }
+  function ctaActive() { if (S.sheet === 'book') return !!(S.book.date && S.book.time != null && contactsOk()); if (S.sheet === 'lead') return contactsOk(); return true; }
+  var sending = false;
+  function syncTG() {
+    if (!inTG) { var b = document.querySelector('#sheet [data-a="main"]'); if (b) { b.textContent = ctaText(); b.disabled = !ctaActive(); } return; }
+    var t = ctaText();
+    if (!t || S.sheet === 'est') tg.MainButton.hide();
+    else tg.MainButton.setParams({ text: t, is_visible: true, is_active: ctaActive() && !sending, color: ctaActive() ? '#b8893a' : '#9aa0ad', text_color: '#ffffff' });
+    if (S.detail || S.sheet) tg.BackButton.show(); else tg.BackButton.hide();
+  }
+  function onMain() {
+    if (S.sheet === 'done') { if (inTG) tg.close(); else closeTop(); return; }
+    if (S.sheet === 'book' || S.sheet === 'lead') { if (!ctaActive()) { toast(ctaText()); haptic('warning'); return; } return submit(); }
+    if (S.detail) { S.book = { fmt: S.book.fmt || 'o' }; openSheet('book'); }
+  }
+  function submit() {
+    if (sending) return; sending = true; syncTG(); if (inTG) tg.MainButton.showProgress(false);
+    S.me.consent = S.me.consent || !!S.consentTick;
+    sset('name', S.me.name); sset('phone', S.me.phone); if (S.me.consent) sset('consent', '1');
+    var payload = { consent: S.me.consent, phone: S.me.phone, name: S.me.name }, l = S.detail && L(S.detail), doneInfo;
+    if (S.sheet === 'book') {
+      var b = S.book; payload.type = 'view'; payload.lid = l.id; payload.date = b.date; payload.time = b.time; payload.fmt = b.fmt;
+      var d0 = b.date.replace(/-/g, ''), t0 = String(b.time).padStart(2, '0');
+      doneInfo = { title: 'Вы записаны на просмотр', text: 'Подтверждение и напоминание придут в чат с ботом. Агент подтвердит запись в течение 15 минут.',
+        rows: '<div><span>Объект</span><b>' + title(l) + '</b></div><div><span>Когда</span><b>' + dLabel(b.date) + ', ' + hh(b.time) + '</b></div><div><span>Формат</span><b>' + (b.fmt === 'v' ? 'онлайн по видео' : 'лично') + '</b></div>',
+        cal: 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent('Просмотр: ' + title(l)) + '&dates=' + d0 + 'T' + t0 + '0000/' + d0 + 'T' + String(b.time + 1).padStart(2, '0') + '0000&location=' + encodeURIComponent(l.addr) };
+    } else {
+      var ld = S.lead; payload.type = 'lead'; payload.kind = ld.kind; payload.lid = ld.lid || null;
+      payload.text = ld.kind === 'q' ? (($('f-q') || {}).value || '') : ld.text;
+      doneInfo = { title: 'Заявка отправлена', text: 'Агент свяжется с вами в течение 15 минут. Детали — в чате с ботом.' };
+    }
+    post(payload).then(function (r) {
+      sending = false; if (inTG) tg.MainButton.hideProgress();
+      if (r && r.ok) { haptic('success'); S.done = doneInfo; openSheet('done'); if (payload.type === 'view') refreshData(); }
+      else { haptic('error'); toast(payload.type === 'view' ? 'Это время только что заняли — выберите другое' : 'Не получилось отправить, попробуйте ещё раз'); if (payload.type === 'view') refreshData(true); syncTG(); }
+    });
+  }
+  function refreshData(reopen) { load(function () { if (reopen && S.sheet === 'book') { S.book.time = null; openSheet('book'); } }); }
+
+  // ---------- поделиться ----------
+  function botLink(id) { return 'https://t.me/' + (D.agency.botUsername || '') + '?start=obj_' + id; }
+  function share(url, text) {
+    var link = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text);
+    if (inTG) tg.openTelegramLink(link); else if (navigator.share) navigator.share({ url: url, text: text }).catch(function () {}); else window.open(link, '_blank');
+  }
+
+  // ---------- отрисовка ----------
+  var TABS = [['catalog', 'Каталог', '<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>'], ['map', 'Карта', '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/>'],
+    ['fav', 'Избранное', '<path d="M12 20s-7-4.5-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.5-9 9-9 9z"/>'], ['mort', 'Ипотека', '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M8 18h8"/>']];
+  function render() {
+    $('tabs').innerHTML = TABS.map(function (t) { return '<button class="tab' + (S.tab === t[0] ? ' on' : '') + '" data-a="tab" data-v="' + t[0] + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + t[2] + '</svg>' + t[1] + (t[0] === 'fav' && S.favs.length ? '<span class="n">' + S.favs.length + '</span>' : '') + '</button>'; }).join('');
+    $('mapwrap').hidden = S.tab !== 'map'; $('view').hidden = S.tab === 'map';
+    $('cnt').innerHTML = D.listings.length + ' ' + plural(D.listings.length, 'объект', 'объекта', 'объектов') + '<br>★ ' + D.agency.rating;
+    if (S.tab === 'catalog') $('view').innerHTML = catalogHTML();
+    else if (S.tab === 'fav') $('view').innerHTML = favHTML();
+    else if (S.tab === 'mort') $('view').innerHTML = mortHTML();
+    else mapRender();
+    syncTG();
+  }
+  function refreshFavUI(id) {
+    document.querySelectorAll('[data-a="fav"][data-v="' + id + '"]').forEach(function (b) {
+      var on = S.favs.indexOf(id) >= 0; b.classList.toggle('on', on);
+      if (b.classList.contains('act')) b.innerHTML = '<i>' + (on ? '♥' : '♡') + '</i>' + (on ? 'Сохранено' : 'Сохранить'); else b.textContent = on ? '♥' : '♡';
+    });
+    var t = document.querySelector('.tab[data-v="fav"]'); if (t) { var n = t.querySelector('.n'); if (S.favs.length) { if (!n) { n = document.createElement('span'); n.className = 'n'; t.appendChild(n); } n.textContent = S.favs.length; } else if (n) n.remove(); }
+  }
+
+  // ---------- события ----------
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-a]'); if (!el || el.disabled) return;
+    var a = el.getAttribute('data-a'), v = el.getAttribute('data-v');
+    if (a === 'stop') return;
+    if (a === 'main') return onMain();
+    if (a === 'close') return closeTop();
+    if (a === 'tab') { S.tab = v; S.showCmp = false; closeAll(); haptic('tap'); render(); window.scrollTo(0, 0); return; }
+    if (a === 'deal') { S.deal = v; S.budget = null; S.priceMax = null; if (v === 'rent') S.type = 'all'; S.mapSel = null; haptic('tap'); return S.tab === 'map' ? (mapRender(), mapCard()) : render(); }
+    if (a === 'type') { S.type = v; haptic('tap'); return render(); }
+    if (a === 'rooms') { S.rooms = v === 'all' ? 'all' : +v; haptic('tap'); return render(); }
+    if (a === 'budget') { S.budget = S.budget === +v ? null : +v; S.priceMax = null; haptic('tap'); return render(); }
+    if (a === 'pmax') { S.priceMax = null; return render(); }
+    if (a === 'dist') { S.dist = v; haptic('tap'); return render(); }
+    if (a === 'sort') { var i = SORTS.findIndex(function (x) { return x[0] === S.sort; }); S.sort = SORTS[(i + 1) % SORTS.length][0]; haptic('tap'); return render(); }
+    if (a === 'open') { if (e.target.closest('.track') && e.target.closest('.track').dataset.moved === '1') return; return openDetail(v); }
+    if (a === 'fav') {
+      var k = S.favs.indexOf(v); if (k >= 0) S.favs.splice(k, 1); else { S.favs.push(v); toast('Добавлено в избранное'); }
+      haptic(k >= 0 ? 'tap' : 'success'); saveFavs(); refreshFavUI(v); if (S.tab === 'fav' && !S.detail) render(); return;
+    }
+    if (a === 'cmp') {
+      var c = S.cmp.indexOf(v); if (c >= 0) S.cmp.splice(c, 1); else { if (S.cmp.length >= 3) S.cmp.shift(); S.cmp.push(v); if (S.favs.indexOf(v) < 0) { S.favs.push(v); saveFavs(); } }
+      haptic('tap');
+      if (S.detail) { $('detail').innerHTML = detailHTML(L(S.detail)); toast(c >= 0 ? 'Убрано из сравнения' : 'Добавлено к сравнению — смотрите в «Избранном»'); } else render();
+      return;
+    }
+    if (a === 'cmpgo') { S.showCmp = true; render(); setTimeout(function () { var t = document.querySelector('.cmp'); if (t) t.scrollIntoView({ behavior: 'smooth' }); }, 50); return; }
+    if (a === 'share') { var l = L(v); return share(botLink(v), title(l) + ' — ' + priceTxt(l) + '\n' + distName(l.dist) + ', ' + l.addr); }
+    if (a === 'sharefav') {
+      var txt = 'Моя подборка в «Ключ»:\n\n' + S.favs.map(L).filter(Boolean).map(function (x, i) { return (i + 1) + '. ' + title(x) + ' — ' + priceTxt(x) + '\n' + botLink(x.id); }).join('\n\n');
+      return share('https://t.me/' + D.agency.botUsername, txt);
+    }
+    if (a === 'onmap') { var lm = L(v); closeAll(); S.tab = 'map'; S.deal = lm.deal; S.mapSel = v; render(); setTimeout(function () { map && map.setView([lm.lat, lm.lng], 14); mapCard(); drawPins(); }, 120); return; }
+    if (a === 'tomort') { var lt = L(v); S.mort.price = lt.price; closeAll(); S.tab = 'mort'; render(); window.scrollTo(0, 0); return; }
+    if (a === 'book') { var p = v ? v.split('|') : []; S.book = { fmt: S.book.fmt || 'o', date: p[0] || null, time: p[1] ? +p[1] : null }; return openSheet('book'); }
+    if (a === 'fmt') { S.book.fmt = v; haptic('tap'); return openSheet('book'); }
+    if (a === 'bday') { S.book.date = v; S.book.time = null; haptic('tap'); return openSheet('book'); }
+    if (a === 'btime') { S.book.time = +v; haptic('tap'); return openSheet('book'); }
+    if (a === 'consent') { S.consentTick = !S.consentTick; haptic('tap'); return openSheet(S.sheet); }
+    if (a === 'tgphone') {
+      tg.requestContact(function (ok, res) { var c = res && res.responseUnsafe && res.responseUnsafe.contact; if (ok && c && c.phone_number) { S.me.phone = '+' + String(c.phone_number).replace(/^\+/, ''); openSheet(S.sheet); haptic('success'); } else if (ok) toast('Номер отправлен в чат — впишите его здесь тоже'); });
+      return;
+    }
+    if (a === 'ask') { var la = L(v); S.lead = { kind: 'q', lid: v, title: 'Вопрос агенту', sub: title(la) }; return openSheet('lead'); }
+    if (a === 'mlead') { var m = S.mort; S.lead = { kind: 'mort', title: 'Заявка на ипотеку', text: money(m.price) + ', взнос ' + m.down + '%, ' + m.term + ' лет, ставка ' + rate(m.prog) + '% · платёж ≈ ' + money(payment(m.price, m.down, m.term, rate(m.prog))) + '/мес' }; return openSheet('lead'); }
+    if (a === 'mfind') { S.tab = 'catalog'; S.deal = 'sale'; S.budget = null; S.priceMax = S.mort.price; render(); window.scrollTo(0, 0); return; }
+    if (a === 'prog') { S.mort.prog = v; haptic('tap'); return render(); }
+    if (a === 'est') return openSheet('est');
+    if (a === 'e-deal') { S.est.deal = v; return openSheet('est'); }
+    if (a === 'e-type') { S.est.type = v; return openSheet('est'); }
+    if (a === 'e-dist') { S.est.dist = v; return openSheet('est'); }
+    if (a === 'estlead') { var es = S.est; S.lead = { kind: 'est', title: 'Точная оценка — бесплатно', text: (es.deal === 'sale' ? 'Продать' : 'Сдать') + ': ' + (es.type === 'house' ? 'дом' : 'квартира') + ', ' + es.area + ' м², ' + distName(es.dist) + ' · по рынку ' + $('e-res').textContent }; return openSheet('lead'); }
+    if (a === 'sub') { post({ type: 'sub', filter: { deal: S.deal, type: S.type, rooms: S.rooms, dist: S.dist, budget: S.budget } }); haptic('success'); toast('🔔 Готово! Новые объекты придут в чат с ботом'); return; }
+  });
+  $('sheet').addEventListener('click', function (e) { if (e.target === $('sheet')) closeTop(); });
+  function closeAll() { S.sheet = null; S.detail = null; $('sheet').hidden = true; $('detail').hidden = true; $('sheet').innerHTML = ''; $('detail').innerHTML = ''; }
+  document.addEventListener('input', function (e) {
+    var id = e.target.id, v = e.target.value;
+    if (e.target.type === 'range') e.target.style.setProperty('--p', ((v - e.target.min) / (e.target.max - e.target.min) * 100) + '%');
+    if (id === 'f-name') S.me.name = v; if (id === 'f-phone') S.me.phone = v;
+    if (id === 'm-price') S.mort.price = +v; if (id === 'm-down') S.mort.down = +v; if (id === 'm-term') S.mort.term = +v;
+    if (id && id.indexOf('m-') === 0) updateMort();
+    if (id === 'e-area') { S.est.area = +v; var d = D.districts[S.est.dist], mid = S.est.deal === 'sale' ? S.est.area * d.m2 * (S.est.type === 'house' ? .85 : 1) : S.est.area * d.rent; $('e-area-v').textContent = v + ' м²'; $('e-res').textContent = estRange(mid, S.est.deal); }
+    syncTG();
+  });
+  // точки галереи и защита от «клика» после свайпа
+  document.addEventListener('scroll', function (e) {
+    var t = e.target; if (!t.matches || !t.matches('[data-track]')) return;
+    var i = Math.round(t.scrollLeft / t.clientWidth), dots = t.parentNode.querySelectorAll('.dots i');
+    dots.forEach(function (d, k) { d.classList.toggle('on', k === i); });
+    var c = t.closest('#detail') && $('gcount'); if (c) c.textContent = (i + 1) + ' / ' + t.children.length;
+    t.dataset.moved = '1'; clearTimeout(t._mv); t._mv = setTimeout(function () { t.dataset.moved = '0'; }, 250);
+  }, true);
+  // колесо мыши листает фото и ленты вбок (на компьютере)
+  document.addEventListener('wheel', function (e) {
+    var t = e.target.closest('[data-track], .chips, .days, .similar'); if (!t || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    var max = t.scrollWidth - t.clientWidth; if (max <= 0 || (e.deltaY < 0 && t.scrollLeft <= 0) || (e.deltaY > 0 && t.scrollLeft >= max - 1)) return;
+    e.preventDefault(); t.scrollLeft += t.matches('[data-track]') ? Math.sign(e.deltaY) * t.clientWidth : e.deltaY;
+  }, { passive: false });
+
+  // ---------- запуск ----------
+  function load(cb) {
+    if (!API) { $('view').innerHTML = '<div class="wrap"><div class="empty"><div class="em">⚠️</div><b>Нет адреса сервера</b>Откройте приложение из бота.</div></div>'; return; }
+    fetch(API + '/realty-data').then(function (r) { return r.json(); }).then(function (j) { D = j; cb && cb(); })
+      .catch(function () { $('view').innerHTML = '<div class="wrap"><div class="empty"><div class="em">📡</div><b>Не удалось загрузить каталог</b>Проверьте интернет и откройте приложение ещё раз.</div></div>'; });
+  }
+  if (tg) {
+    try { tg.ready(); tg.expand(); if (tg.disableVerticalSwipes) tg.disableVerticalSwipes(); } catch (e) {}
+    document.documentElement.classList.toggle('dark', tg.colorScheme === 'dark');
+    try { tg.setHeaderColor(tg.colorScheme === 'dark' ? '#0c1220' : '#f5f3ee'); tg.setBackgroundColor(tg.colorScheme === 'dark' ? '#0c1220' : '#f5f3ee'); } catch (e) {}
+    if (inTG) { tg.MainButton.onClick(onMain); tg.BackButton.onClick(closeTop); tg.onEvent('themeChanged', function () { document.documentElement.classList.toggle('dark', tg.colorScheme === 'dark'); }); }
+  }
+  if (!inTG && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.classList.add('dark');
+  var u = inTG && tg.initDataUnsafe && tg.initDataUnsafe.user;
+  sget(['fav', 'name', 'phone', 'consent'], function (st) {
+    try { S.favs = JSON.parse(st.fav || '[]'); } catch (e) { S.favs = []; }
+    S.me = { name: st.name || (u ? [u.first_name, u.last_name].filter(Boolean).join(' ') : ''), phone: st.phone || '', consent: st.consent === '1' };
+    load(function () {
+      S.favs = S.favs.filter(L); $('city').textContent = D.agency.city + ' · ' + D.agency.years + ' лет';
+      var t = qs.get('tab'); if (t && ['catalog', 'map', 'fav', 'mort'].indexOf(t) >= 0) S.tab = t;
+      render();
+      var id = qs.get('id'); if (id && L(id)) { S.deal = L(id).deal; render(); openDetail(id); }
+    });
+  });
+})();
+</script>
+</body>
+</html>
