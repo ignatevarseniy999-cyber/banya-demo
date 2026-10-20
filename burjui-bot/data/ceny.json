@@ -1,0 +1,155 @@
+{
+  "_rules": {
+    "hourly": "Цена за час зависит от зала, дня недели и числа гостей (дети считаются). Будни: пн-чт, выходные: пт-вс. День берём по дате начала брони. Минимум 2 часа. Итог = цена_за_час * часы.",
+    "daily": "Цена за сутки по дню заезда (ночь). Итог = (база + max(0, гости - включено) * доп_гость) * ночей. Депозит возвратный, в сумму не входит.",
+    "prepayment": "Почасовые залы: предоплата 2000. Остаток к оплате = итог - 2000 (+ допуслуги на месте)."
+  },
+
+  "hourly": {
+    "min_hours": 2,
+    "prepayment": 2000,
+    "weekend_days": ["fri", "sat", "sun"],
+    "rooms": {
+      "baron": {
+        "name": "Барон",
+        "max_guests": 10,
+        "open": true,
+        "weekday": 4300,
+        "weekend": [
+          { "max_guests": 4, "price": 4500 },
+          { "max_guests": 10, "price": 4700 }
+        ],
+        "bbq_zone": 0,
+        "hookah": 1500
+      },
+      "markiz": {
+        "name": "Маркиз",
+        "max_guests": 12,
+        "open": true,
+        "weekday": 3300,
+        "weekend": [
+          { "max_guests": 4, "price": 3700 },
+          { "max_guests": 12, "price": 4000 }
+        ],
+        "bbq_zone": 0,
+        "hookah": 1500
+      },
+      "gercog": {
+        "name": "Герцог",
+        "max_guests": 20,
+        "open": true,
+        "weekday": 3700,
+        "weekend": [
+          { "max_guests": 6, "price": 4000 },
+          { "max_guests": 11, "price": 4200 },
+          { "max_guests": 15, "price": 4500 },
+          { "max_guests": 20, "price": 5000 }
+        ],
+        "bbq_zone": 1000,
+        "hookah": 1200,
+        "karaoke": true
+      },
+      "monarh": {
+        "name": "Монарх",
+        "max_guests": 20,
+        "open": false,
+        "closed_note": "Закрыт на капитальный ремонт, открытие примерно через месяц",
+        "weekday": 3700,
+        "weekend": [
+          { "max_guests": 6, "price": 4000 },
+          { "max_guests": 11, "price": 4200 },
+          { "max_guests": 15, "price": 4500 },
+          { "max_guests": 20, "price": 5000 }
+        ],
+        "bbq_zone": 1000,
+        "hookah": 1200,
+        "karaoke": true
+      }
+    }
+  },
+
+  "daily": {
+    "booking_link": "https://homereserve.ru/IRoY8HKzSU",
+    "rooms": {
+      "vikont": {
+        "name": "Виконт",
+        "weekend_nights": ["fri", "sat"],
+        "weekday": 16000,
+        "weekend": 20000,
+        "included_guests": 4,
+        "extra_guest": 1000,
+        "max_guests": 15,
+        "deposit": 10000,
+        "check_in": "15:00",
+        "check_out": "12:00",
+        "late_checkout_per_hour": 1000,
+        "sauna_per_hour": 2500,
+        "hammam_per_hour": 2500,
+        "sauna_min_hours": 2,
+        "extra_parking_per_day": 700
+      },
+      "studio": {
+        "name": "Студия",
+        "weekend_nights": [],
+        "weekday": 4000,
+        "weekend": 4000,
+        "included_guests": 2,
+        "extra_guest": 1000,
+        "max_guests": 3,
+        "free_children_under": 5,
+        "deposit": 2000,
+        "check_in": "15:00",
+        "check_out": "13:00"
+      }
+    }
+  },
+
+  "provinciya": {
+    "_note": "Бот только рассказывает и передаёт гостя админу Провинции",
+    "weekend_nights": ["fri", "sat"],
+    "extra_guest_per_day": 1000,
+    "deposit": 10000,
+    "houses": {
+      "house2": { "name": "Дом с 2 спальнями", "weekday": 10000, "weekend": 15000, "included_guests": 2, "max_guests": 10 },
+      "house3": { "name": "Дом с 3 спальнями", "weekday": 12000, "weekend": 17000, "included_guests": 2, "max_guests": 12 }
+    },
+    "spa": { "per_hour": 3000, "min_hours": 2 },
+    "admin": {
+      "phone": "+79251234451",
+      "telegram": "https://t.me/Arenda_Doma_Provinciya",
+      "max": "https://max.ru/u/f9LHodD0cOIwO64yhAP-x1A4FYqwSdZnEb1CWbV0USIPnFFZcD-11K-8T24",
+      "whatsapp": "https://wa.me/79251234451"
+    }
+  },
+
+  "extras": {
+    "karaoke_1_mic_per_hour": 750,
+    "karaoke_2_mic_per_hour": 1000,
+    "speaker_per_booking": 1000,
+    "firelighter": 350,
+    "coal_3kg": 750,
+    "coal_5kg": 850,
+    "skewer_rent": 200,
+    "grill_small": 850,
+    "grill_large": 1000,
+    "bbq_fan": 150,
+    "kilt": 250,
+    "towel": 250,
+    "bath_towel": 150,
+    "sheet": 250,
+    "robe_adult": 250,
+    "robe_child": 100,
+    "poncho_child": 150,
+    "bath_hat_rent": 50,
+    "bath_hat_buy": 200,
+    "bath_kit_item": 250,
+    "bamboo_broom": 600,
+    "water": 100,
+    "juice_1l": 300,
+    "dobry_cola": 250,
+    "pizza": 650,
+    "tea_set": 500,
+    "parking_after_12h": 700,
+    "parking_after_24h": 1200
+  }
+}
