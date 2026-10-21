@@ -2,6 +2,8 @@
 from .pricing import DAILY, HOURLY
 
 SITE = "https://burjuiclub.ru"
+# Онлайн-запись Yclients (тот же виджет, что на сайте): гость сам видит свободное время
+YCLIENTS_URL = "https://n172469.yclients.com/"
 PHONE = "+7 (926) 665-18-68"
 ADDRESS = "Московская обл., г. Подольск, ул. Большая Серпуховская, 189А"
 MAP_URL = "https://yandex.ru/navi?whatshere%5Bzoom%5D=19&whatshere%5Bpoint%5D=37.545444,55.392450&si=h9pef11nxqn0etkzavntr6f2zc"

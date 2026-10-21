@@ -109,7 +109,8 @@ def guests(max_guests: int, back: str):
 
 def confirm_hourly():
     return ikb([
-        [("✅ Всё верно, оставить заявку", "ok")],
+        [("🕐 Свободное время и онлайн-запись", None, texts.YCLIENTS_URL)],
+        [("✅ Оставить заявку администратору", "ok")],
         [("✏️ Изменить", "back:guests"), ("✖ Отмена", "m")],
     ])
 
