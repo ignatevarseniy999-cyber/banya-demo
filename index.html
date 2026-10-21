@@ -246,7 +246,14 @@ whenTelegram(function () {
   function parseIso(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
   function hall() { for (var i = 0; i < BATH.halls.length; i++) if (BATH.halls[i].id === S.hallId) return BATH.halls[i]; return null; }
   function isWeekend(s) { return (BATH.weekendDays || [6, 0]).indexOf(parseIso(s).getDay()) >= 0; }
-  function rate(h, s) { return isWeekend(s) ? h.price.weekend : h.price.weekday; }
+  // price.weekendTiers: [[до N гостей, ₽/час], ...] — цена выходного дня по числу гостей
+  function rate(h, s) {
+    if (!isWeekend(s)) return h.price.weekday;
+    var t = h.price.weekendTiers;
+    if (t) { for (var i = 0; i < t.length; i++) if (S.guests <= t[i][0]) return t[i][1]; return t[t.length - 1][1]; }
+    return h.price.weekend;
+  }
+  function L(key, def) { return (BATH.labels && BATH.labels[key]) || def; }
   function dateLabel(s) { return parseIso(s).toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'long' }); }
   function haptic(kind) {
     if (!inTG || !tg.HapticFeedback) return;
@@ -274,6 +281,7 @@ whenTelegram(function () {
     return function () { h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); h ^= h >>> 16; return (h >>> 0) / 4294967296; };
   }
   function busySet(h, s) {
+    if (BATH.showBusy === false) return {}; // реальной занятости нет — время подтверждает администратор
     var r = seeded(BATH.slug + h.id + s), set = {}, n = (isWeekend(s) ? 2 : 1) + Math.floor(r() * 2);
     for (var i = 0; i < n; i++) {
       var len = 2 + Math.floor(r() * 3), st = BATH.open + Math.floor(r() * (BATH.close - BATH.open - len + 1));
@@ -355,14 +363,14 @@ whenTelegram(function () {
     '<rect x="318" y="160" width="20" height="34" rx="2" fill="#3a1f10"/><circle cx="333" cy="178" r="1.6" fill="#e8a85a"/>' +
     '</svg>';
   function progress() {
-    var names = ['Зал', 'Время', 'Допы', 'Контакты'];
+    var names = [L('unit', 'Зал'), 'Время', 'Допы', 'Контакты'];
     return '<div class="progress">' + names.map(function (n, i) {
       return '<div class="' + (i + 1 === S.step ? 'on' : i + 1 < S.step ? 'past' : '') + '"><i>0' + (i + 1) + '</i>' + n + '</div>';
     }).join('') + '</div>';
   }
 
   function step1() {
-    return '<h2>Выберите зал</h2>' + BATH.halls.map(function (h) {
+    return '<h2>' + esc(L('pick', 'Выберите зал')) + '</h2>' + BATH.halls.map(function (h) {
       var art = h.photo ? ' style="--tone:' + esc(h.tone) + ';background-image:linear-gradient(rgba(0,0,0,.15),rgba(0,0,0,.55)),url(' + encodeURI(h.photo) + ')"'
         : ' style="--tone:' + esc(h.tone || '#6b391e') + '"';
       return '<button class="card hall' + (S.hallId === h.id ? ' sel' : '') + '" data-act="hall" data-v="' + esc(h.id) + '">' +
@@ -375,14 +383,16 @@ whenTelegram(function () {
   }
 
   function step2() {
-    var h = hall(), days = dateList(), busy = busySet(h, S.date), maxDur = Math.min(8, BATH.close - BATH.open);
+    var h = hall(), days = dateList(), busy = busySet(h, S.date), maxDur = Math.min(BATH.maxHours || 8, BATH.close - BATH.open);
     var html = '<h2>Дата и время</h2><div class="dates">' + days.map(function (d) {
       return '<button class="date' + (d.we ? ' we' : '') + (d.iso === S.date ? ' sel' : '') + '" data-act="date" data-v="' + d.iso + '"><small>' + d.wd + '</small><b>' + d.day + '</b></button>';
     }).join('') + '</div>';
     html += '<div class="row2" style="margin-top:12px">' +
       '<div class="card stepbox"><div class="lbl">Длительность</div><div class="stepper"><button data-act="dur" data-v="-1"' + (S.dur <= h.minHours ? ' disabled' : '') + '>−</button><b>' + S.dur + ' ч</b><button data-act="dur" data-v="1"' + (S.dur >= maxDur ? ' disabled' : '') + '>+</button></div></div>' +
       '<div class="card stepbox"><div class="lbl">Гостей</div><div class="stepper"><button data-act="guests" data-v="-1"' + (S.guests <= 1 ? ' disabled' : '') + '>−</button><b>' + S.guests + '</b><button data-act="guests" data-v="1"' + (S.guests >= h.capacity ? ' disabled' : '') + '>+</button></div></div></div>' +
-      '<div class="note">Включено ' + h.included + ' ' + plural(h.included, 'гость', 'гостя', 'гостей') + ', каждый следующий +' + money(h.extraGuest) + ' · минимум ' + h.minHours + ' ч</div>';
+      '<div class="note">' + (h.extraGuest ? 'Включено ' + h.included + ' ' + plural(h.included, 'гость', 'гостя', 'гостей') + ', каждый следующий +' + money(h.extraGuest) + ' · '
+        : h.price.weekendTiers ? 'До ' + h.capacity + ' ' + plural(h.capacity, 'гостя', 'гостей', 'гостей') + ', в выходные цена зависит от числа гостей · ' : '') +
+        'минимум ' + h.minHours + ' ч' + (BATH.showBusy === false ? ' · время подтвердит администратор' : '') + '</div>';
 
     html += '<h3>Время начала</h3>';
     var free = freeStarts(h, S.date, S.dur);
@@ -397,7 +407,7 @@ whenTelegram(function () {
         else if (free.indexOf(k) < 0) cls += ' nofit';
         html += '<button class="' + cls + '" data-act="slot" data-v="' + k + '">' + hh(k) + '</button>';
       }
-      html += '</div><div class="legend"><span><i style="background:var(--card);border:1px solid var(--line)"></i>свободно</span><span><i style="background:var(--busy)"></i>занято</span><span><i style="background:var(--accent)"></i>ваше время</span></div>';
+      html += '</div><div class="legend"><span><i style="background:var(--card);border:1px solid var(--line)"></i>свободно</span>' + (BATH.showBusy === false ? '' : '<span><i style="background:var(--busy)"></i>занято</span>') + '<span><i style="background:var(--accent)"></i>ваше время</span></div>';
     }
     var r = rate(h, S.date);
     html += '<div class="card pricebar"><span>' + (S.start != null ? hh(S.start) + '–' + hh(S.start + S.dur) + ' · ' : '') + S.dur + ' ч × ' + money(r) +
@@ -406,6 +416,7 @@ whenTelegram(function () {
   }
 
   function step3() {
+    if (!visibleExtras().length) return '<h2>Добавьте к визиту</h2><div class="card empty">' + esc(L('noExtras', 'Дополнительных услуг пока нет. Пожелания можно написать на следующем шаге.')) + '</div>';
     return '<h2>Добавьте к визиту</h2><div class="card">' + visibleExtras().map(function (e) {
       var q = S.extras[e.id] || 0, mx = extraMax(e);
       var ctrl = q > 0
@@ -418,13 +429,13 @@ whenTelegram(function () {
 
   function summaryRows(c) {
     var h = hall(), rows = '';
-    rows += '<div class="l"><span>Зал</span><span>' + esc(h.name) + '</span></div>';
+    rows += '<div class="l"><span>' + esc(L('unit', 'Зал')) + '</span><span>' + esc(h.name) + '</span></div>';
     rows += '<div class="l"><span>Когда</span><span>' + dateLabel(S.date) + ', ' + hh(S.start) + '–' + hh(S.start + S.dur) + '</span></div>';
     rows += '<div class="l"><span>' + S.dur + ' ч × ' + money(c.rate) + '</span><span>' + money(c.hallSum) + '</span></div>';
     rows += '<div class="l"><span>Гостей: ' + S.guests + (c.extraG ? ' (+' + c.extraG + ' сверх включённых)' : '') + '</span><span>' + (c.guestsSum ? money(c.guestsSum) : 'включено') + '</span></div>';
     c.items.forEach(function (i) { rows += '<div class="l"><span>' + esc(i.name) + (i.qty > 1 ? ' × ' + i.qty : '') + '</span><span>' + money(i.sum) + '</span></div>'; });
     rows += '<div class="l tot"><span>Итого</span><span>' + money(c.total) + '</span></div>';
-    rows += '<div class="l"><span>Предоплата ' + BATH.prepayPercent + '%</span><span class="pre">' + money(c.prepay) + '</span></div>';
+    if (BATH.prepayPercent > 0) rows += '<div class="l"><span>Предоплата ' + BATH.prepayPercent + '%</span><span class="pre">' + money(c.prepay) + '</span></div>';
     return rows;
   }
 
@@ -437,7 +448,7 @@ whenTelegram(function () {
       '<label class="field"><span>Пожелания</span><textarea id="f-comment" rows="2" placeholder="Например: будем с детьми, нужен детский веник">' + esc(S.comment) + '</textarea></label></div>' +
       (canAsk && !S.phone ? '<button class="tgphone" data-act="contact">Взять номер из Telegram</button>' : '') +
       '<h3>Ваша бронь</h3><div class="card sum">' + summaryRows(c) + '</div>' +
-      '<div class="rules"><div>• Предоплату можно внести после подтверждения администратором</div><div>• ' + esc(BATH.cancelRule) + '</div></div>' +
+      '<div class="rules">' + (BATH.prepayPercent > 0 ? '<div>• Предоплату можно внести после подтверждения администратором</div>' : '') + (BATH.cancelRule ? '<div>• ' + esc(BATH.cancelRule) + '</div>' : '') + '</div>' +
       (CONSENT_IN_CHAT
         ? '<div class="consent-ok">✓ Согласие на обработку персональных данных получено в чате</div>'
         : '<button class="card consent' + (S.consent ? ' on' : '') + '" data-act="consent"><span class="box">' + (S.consent ? '✓' : '') + '</span>' +
@@ -447,11 +458,11 @@ whenTelegram(function () {
   function consentSheet() {
     return '<div class="sheet-bg" data-act="sheet-close"><div class="sheet" data-act="sheet-body">' +
       '<h3>Согласие на обработку персональных данных</h3>' +
-      '<p>Отмечая галочку, вы даёте согласие ' + esc(BATH.operator || BATH.name) + ' на обработку ваших персональных данных: имени, номера телефона, данных профиля Telegram (имя, ник, ID) и сведений о бронированиях.</p>' +
+      '<p>Отмечая галочку, вы даёте согласие ' + esc(BATH.operator || BATH.name) + ' на обработку ваших персональных данных: имени, номера телефона, ' + (inTG ? 'данных профиля Telegram (имя, ник, ID) ' : '') + 'и сведений о бронированиях.</p>' +
       '<p><b>Цель:</b> принять и подтвердить бронь, напомнить о визите, связаться с вами по брони.</p>' +
       '<p><b>Действия:</b> сбор, запись, хранение, уточнение, использование, удаление. Третьим лицам данные не передаются, кроме случаев, предусмотренных законом.</p>' +
       '<p><b>Срок:</b> до достижения цели обработки или до отзыва согласия.</p>' +
-      '<p><b>Отзыв:</b> в любой момент командой /revoke в чате с ботом или через администратора.</p>' +
+      '<p><b>Отзыв:</b> в любой момент ' + (inTG ? 'командой /revoke в чате с ботом или ' : '') + 'через администратора.</p>' +
       '<p style="color:var(--hint)">Основание: Федеральный закон № 152-ФЗ «О персональных данных».</p>' +
       '<button class="cta" data-act="sheet-agree">Согласен</button></div></div>';
   }
@@ -459,7 +470,7 @@ whenTelegram(function () {
   function doneView() {
     var c = S.done.calc;
     return '<div class="done fade"><div class="done-ic">✓</div><h2>Заявка отправлена</h2>' +
-      '<p>Детали брони уже в чате. Администратор подтвердит её в течение 15 минут.</p>' +
+      '<p>' + esc(inTG ? 'Детали брони уже в чате. Администратор подтвердит её в течение 15 минут.' : L('done', 'Администратор подтвердит бронь в течение 15 минут.')) + '</p>' +
       '<div class="card sum">' + S.done.rows + '</div>' +
       (inTG ? '<div class="demo-hint"><b>Это демо.</b> Вернитесь в чат: там видно, какую заявку получил администратор. Подтвердите её и посмотрите, что бот отправит гостю дальше.</div>' : '') +
       '</div>';
@@ -469,7 +480,7 @@ whenTelegram(function () {
   function ctaState() {
     if (S.done) return { text: inTG ? 'Вернуться в чат' : 'Новая бронь', active: true };
     var c = calc();
-    if (S.step === 1) return S.hallId ? { text: 'Выбрать дату и время', active: true } : { text: 'Выберите зал', active: false };
+    if (S.step === 1) return S.hallId ? { text: 'Выбрать дату и время', active: true } : { text: L('pick', 'Выберите зал'), active: false };
     if (S.step === 2) return S.start != null ? { text: 'Далее · ' + hh(S.start) + '–' + hh(S.start + S.dur), active: true } : { text: 'Выберите время начала', active: false };
     if (S.step === 3) return { text: (c.items.length ? 'Далее · ' : 'Пропустить · ') + money(c.total), active: true };
     var ok = S.name.trim().length >= 2 && phoneDigits().length === 11;
