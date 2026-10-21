@@ -22,6 +22,11 @@ def _load_dotenv() -> None:
 _load_dotenv()
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
+# MAX: токен из кабинета «MAX для бизнеса» → Чат-боты → Настройки
+MAX_TOKEN = os.environ.get("MAX_TOKEN", "")
+MAX_API_URL = os.environ.get("MAX_API_URL", "https://platform-api2.max.ru")
+# Путь к сертификату Минцифры (Russian Trusted Root CA), если его нет в системе
+MAX_CA_FILE = os.environ.get("MAX_CA_FILE", "")
 # Чат администраторов (группа), куда бот пишет заявки. Узнать id: добавить бота в группу и написать /id
 ADMIN_CHAT_ID = int(os.environ["ADMIN_CHAT_ID"]) if os.environ.get("ADMIN_CHAT_ID") else None
 # Ключ Claude API. Без него бот работает на кнопках, а свободный текст разбирает по ключевым словам

@@ -1,4 +1,5 @@
 """Минимальный клиент Telegram Bot API на стандартной библиотеке."""
+import html
 import json
 import logging
 import mimetypes
@@ -8,10 +9,12 @@ import urllib.request
 import uuid
 from pathlib import Path
 
+from .channel import ChannelError
+
 log = logging.getLogger(__name__)
 
 
-class TelegramError(Exception):
+class TelegramError(ChannelError):
     pass
 
 
@@ -43,9 +46,10 @@ class Telegram:
         return data["result"]
 
     # Удобные обёртки
-    def send(self, chat_id, text, markup=None, **kw):
-        return self.call("sendMessage", chat_id=chat_id, text=text, parse_mode="HTML",
-                         reply_markup=markup, link_preview_options={"is_disabled": True}, **kw)
+    def send(self, chat_id, text, markup=None, reply_to=None):
+        return self.call("sendMessage", chat_id=chat_id, text=text, parse_mode="HTML", reply_markup=markup,
+                         link_preview_options={"is_disabled": True},
+                         reply_parameters={"message_id": reply_to} if reply_to else None)
 
     def edit(self, chat_id, message_id, text, markup=None):
         return self.call("editMessageText", chat_id=chat_id, message_id=message_id, text=text,
@@ -56,6 +60,28 @@ class Telegram:
             self.call("answerCallbackQuery", callback_query_id=callback_id, text=text)
         except TelegramError as e:  # кнопка устарела — не страшно
             log.debug("answerCallbackQuery: %s", e)
+
+    def typing(self, chat_id):
+        self.call("sendChatAction", chat_id=chat_id, action="typing")
+
+    def forward(self, to_chat, from_chat, msg):
+        return self.call("forwardMessage", chat_id=to_chat, from_chat_id=from_chat,
+                         message_id=msg["message_id"])["message_id"]
+
+    def copy(self, to_chat, msg):
+        self.call("copyMessage", chat_id=to_chat, from_chat_id=msg["chat"]["id"], message_id=msg["message_id"])
+
+    def ack(self, msg):
+        self.call("setMessageReaction", chat_id=msg["chat"]["id"], message_id=msg["message_id"],
+                  reaction=[{"type": "emoji", "emoji": "👍"}])
+
+    @staticmethod
+    def user_ref(u: dict) -> str:
+        name = html.escape(" ".join(filter(None, [u.get("first_name"), u.get("last_name")])) or "Гость")
+        s = f'<a href="tg://user?id={u["id"]}">{name}</a>'
+        if u.get("username"):
+            s += f" (@{u['username']})"
+        return s
 
     def send_photos(self, chat_id, photos):
         """photos: список (file_id или Path). Возвращает file_id отправленных фото по порядку."""

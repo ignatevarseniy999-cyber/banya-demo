@@ -10,6 +10,7 @@ os.environ.setdefault("DB_PATH", os.path.join(tempfile.mkdtemp(), "test.sqlite3"
 from bot import config, handlers  # noqa: E402
 from bot.pricing import PriceError, quote_daily, quote_hourly  # noqa: E402
 from bot.storage import Storage  # noqa: E402
+from bot.tg import Telegram  # noqa: E402
 
 SAT = date(2026, 10, 24)
 TUE = date(2026, 10, 20)
@@ -74,8 +75,22 @@ class FakeTG:
         self.mid += 1
         return {"message_id": self.mid}
 
-    def send(self, chat_id, text, markup=None, **kw):
+    def send(self, chat_id, text, markup=None, reply_to=None):
         return self.call("sendMessage", chat_id=chat_id, text=text, reply_markup=markup)
+
+    def forward(self, to_chat, from_chat, msg):
+        return self.call("forwardMessage", chat_id=to_chat, from_chat_id=from_chat)["message_id"]
+
+    def copy(self, to_chat, msg):
+        self.call("copyMessage", chat_id=to_chat, from_chat_id=msg["chat"]["id"])
+
+    def ack(self, msg):
+        self.call("setMessageReaction", chat_id=msg["chat"]["id"])
+
+    def typing(self, chat_id):
+        self.call("sendChatAction", chat_id=chat_id)
+
+    user_ref = staticmethod(Telegram.user_ref)
 
     def edit(self, chat_id, message_id, text, markup=None):
         return self.call("editMessageText", chat_id=chat_id, message_id=message_id, text=text, reply_markup=markup)

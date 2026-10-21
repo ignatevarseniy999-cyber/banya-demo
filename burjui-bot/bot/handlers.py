@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 from . import config, texts
 from . import keyboards as kb
 from .pricing import DAILY, HOURLY, PriceError, day_label, quote_daily, quote_hourly
-from .tg import TelegramError
+from .channel import ChannelError
 
 log = logging.getLogger(__name__)
 PHOTO_EXT = {".jpg", ".jpeg", ".png", ".webp"}
@@ -63,14 +63,6 @@ def parse_phone(text: str):
     if len(digits) == 10 and digits[0] == "9":
         return "+7" + digits
     return None
-
-
-def user_link(u: dict) -> str:
-    name = html.escape(" ".join(filter(None, [u.get("first_name"), u.get("last_name")])) or "Гость")
-    s = f'<a href="tg://user?id={u["id"]}">{name}</a>'
-    if u.get("username"):
-        s += f" (@{u['username']})"
-    return s
 
 
 class Bot:
@@ -241,7 +233,7 @@ class Bot:
             try:
                 self.tg.edit(uid, mid, text, markup)
                 return
-            except TelegramError:
+            except ChannelError:
                 pass
         self.tg.send(uid, text, markup)
 
@@ -264,14 +256,15 @@ class Bot:
             url = texts.ROOM_PAGES.get(room, texts.SITE)
             self.tg.send(uid, f"Фото «{texts.room_name(room)}» можно посмотреть на сайте: {url}")
             return
-        cached = self.db.photo_ids(room)
+        key = f"{getattr(self.tg, 'name', 'tg')}:{room}"
+        cached = self.db.photo_ids(key)
         try:
             if len(cached) == len(files[:10]):
                 self.tg.send_photos(uid, cached)
             else:
-                self.db.save_photo_ids(room, self.tg.send_photos(uid, files))
-        except TelegramError:
-            self.db.save_photo_ids(room, self.tg.send_photos(uid, files))
+                self.db.save_photo_ids(key, self.tg.send_photos(uid, files))
+        except ChannelError:
+            self.db.save_photo_ids(key, self.tg.send_photos(uid, files))
         self.tg.send(uid, f"Это «{texts.room_name(room)}». Посчитать стоимость?",
                      kb.ikb([[("📅 Рассчитать и забронировать", f"b:{room}")], [("↩ Меню", "m")]]))
 
@@ -363,7 +356,7 @@ class Bot:
         })
         body = q.text().replace("💰 ", "")
         text = (f"🆕 <b>Заявка №{lead_id} из бота</b>\n\n{body}\n\n"
-                f"👤 {user_link(msg['from'])}\n📞 {html.escape(phone)}\n\n"
+                f"👤 {self.tg.user_ref(msg['from'])}\n📞 {html.escape(phone)}\n\n"
                 "<i>Ответьте на это сообщение — бот перешлёт ответ гостю.</i>")
         sent = self.to_admins(msg["from"], text, silent=True)
         self.state[uid] = {}
@@ -384,7 +377,7 @@ class Bot:
                 self.tg.send(uid, texts.NO_ADMIN_CHAT)
             return False
         if "👤" not in text:
-            text += f"\n\n👤 {user_link(user)}\n<i>Ответьте на это сообщение — бот перешлёт ответ гостю.</i>"
+            text += f"\n\n👤 {self.tg.user_ref(user)}\n<i>Ответьте на это сообщение — бот перешлёт ответ гостю.</i>"
         sent = self.tg.send(config.ADMIN_CHAT_ID, text)
         self.db.link(sent["message_id"], uid)
         if not silent:
@@ -396,11 +389,12 @@ class Bot:
         self.tg.send(uid, texts.RECEIPT_REPLY)
         if not config.ADMIN_CHAT_ID:
             return
-        head = self.tg.send(config.ADMIN_CHAT_ID, f"🧾 <b>Гость прислал чек или файл</b>\n👤 {user_link(msg['from'])}\n"
+        head = self.tg.send(config.ADMIN_CHAT_ID, f"🧾 <b>Гость прислал чек или файл</b>\n👤 {self.tg.user_ref(msg['from'])}\n"
                                                   "<i>Проверьте оплату в ЮKassa. Ответьте на это сообщение, чтобы написать гостю.</i>")
         self.db.link(head["message_id"], uid)
-        fwd = self.tg.call("forwardMessage", chat_id=config.ADMIN_CHAT_ID, from_chat_id=uid, message_id=msg["message_id"])
-        self.db.link(fwd["message_id"], uid)
+        fwd_id = self.tg.forward(config.ADMIN_CHAT_ID, uid, msg)
+        if fwd_id:
+            self.db.link(fwd_id, uid)
 
     def on_admin_message(self, msg):
         reply = msg.get("reply_to_message")
@@ -410,19 +404,18 @@ class Bot:
         if not uid:
             return
         try:
-            self.tg.call("copyMessage", chat_id=uid, from_chat_id=msg["chat"]["id"], message_id=msg["message_id"])
-            self.tg.call("setMessageReaction", chat_id=msg["chat"]["id"], message_id=msg["message_id"],
-                         reaction=[{"type": "emoji", "emoji": "👍"}])
-        except TelegramError as e:
+            self.tg.copy(uid, msg)
+            self.tg.ack(msg)
+        except ChannelError as e:
             self.tg.send(msg["chat"]["id"], f"Не удалось отправить гостю: {html.escape(str(e))}",
-                         reply_parameters={"message_id": msg["message_id"]})
+                         reply_to=msg["message_id"])
 
     # ---------- свободный текст ----------
     def free_text(self, msg, text):
         uid = msg["chat"]["id"]
         if self.ai:
             try:
-                self.tg.call("sendChatAction", chat_id=uid, action="typing")
+                self.tg.typing(uid)
                 reply, actions = self.ai.answer(uid, text, now_msk().date())
             except Exception:
                 log.exception("Ошибка ИИ, переключаюсь на ключевые слова")

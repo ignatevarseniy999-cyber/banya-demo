@@ -13,7 +13,7 @@ class Storage:
             CREATE TABLE IF NOT EXISTS leads (
                 id INTEGER PRIMARY KEY, created REAL, user_id INTEGER, kind TEXT, data TEXT);
             CREATE TABLE IF NOT EXISTS relay (
-                admin_message_id INTEGER PRIMARY KEY, user_id INTEGER);
+                admin_message_id TEXT PRIMARY KEY, user_id INTEGER);
             CREATE TABLE IF NOT EXISTS photos (
                 room TEXT, idx INTEGER, file_id TEXT, PRIMARY KEY (room, idx));
         """)
@@ -24,12 +24,13 @@ class Storage:
         self.db.commit()
         return cur.lastrowid
 
-    def link(self, admin_message_id: int, user_id: int) -> None:
-        self.db.execute("INSERT OR REPLACE INTO relay VALUES (?, ?)", (admin_message_id, user_id))
+    def link(self, admin_message_id, user_id: int) -> None:
+        """id сообщений: в Telegram это числа, в MAX — строки, поэтому храним текстом."""
+        self.db.execute("INSERT OR REPLACE INTO relay VALUES (?, ?)", (str(admin_message_id), user_id))
         self.db.commit()
 
-    def user_for(self, admin_message_id: int):
-        row = self.db.execute("SELECT user_id FROM relay WHERE admin_message_id = ?", (admin_message_id,)).fetchone()
+    def user_for(self, admin_message_id):
+        row = self.db.execute("SELECT user_id FROM relay WHERE admin_message_id = ?", (str(admin_message_id),)).fetchone()
         return row[0] if row else None
 
     def photo_ids(self, room: str):
