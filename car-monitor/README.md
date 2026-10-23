@@ -37,7 +37,33 @@ Avito и Авто.ру не пускают обычные «скрипты» (о
 1. Напишите [@BotFather](https://t.me/BotFather) команду `/newbot`, придумайте имя.
 2. Он пришлёт токен вида `123456789:AA...` — он понадобится дальше.
 
-### 2. Windows
+### 2. Установка в Docker (рекомендуется, Linux-сервер или ПК)
+
+Нужен Docker (если нет: `curl -fsSL https://get.docker.com | sh`).
+
+```bash
+unzip car-monitor.zip
+cd car-monitor
+sh install.sh 123456789:AA...ваш_токен
+```
+
+Скрипт создаст `.env`, соберёт образ (первый раз — несколько минут, качается Chromium)
+и запустит контейнер. Бот сам поднимается после перезагрузки сервера.
+
+```bash
+docker compose logs -f     # логи
+docker compose restart     # перезапуск после правки .env
+docker compose down        # остановить
+```
+
+База объявлений и профиль браузера лежат в `car-monitor/data/` — не удаляйте её при
+обновлении. Обновление: распакуйте новый архив поверх папки и снова `sh install.sh`.
+
+В контейнере браузер работает на виртуальном экране, поэтому решить капчу руками там
+нельзя. Если Avito/Авто.ру постоянно пишут о капче — увеличьте `CHECK_INTERVAL` или
+укажите российский `PROXY` в `.env`, затем `docker compose restart`.
+
+### 2. Windows (без Docker)
 
 1. Установите Python с [python.org](https://www.python.org/downloads/) — при установке
    поставьте галочку **Add python.exe to PATH**.
@@ -45,7 +71,7 @@ Avito и Авто.ру не пускают обычные «скрипты» (о
    Первый запуск ставит всё нужное (несколько минут), затем откроет `.env` в блокноте.
 3. Впишите токен в строку `TELEGRAM_BOT_TOKEN=`, сохраните, снова запустите `run.bat`.
 
-### 2. Linux / macOS
+### 2. Linux / macOS (без Docker)
 
 ```bash
 cd car-monitor
@@ -110,6 +136,7 @@ carmon/parsers.py     разбор выдачи Avito / Авто.ру / Drom
 carmon/fetcher.py     загрузка страниц (requests или Chromium через Playwright)
 carmon/db.py          SQLite: поиски и уже виденные объявления
 carmon/telegram.py    минимальный клиент Telegram Bot API
+Dockerfile, docker-compose.yml, install.sh   установка в Docker
 tests/                тесты на сохранённых страницах: python -m unittest discover tests
 ```
 

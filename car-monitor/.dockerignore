@@ -1,0 +1,7 @@
+.env
+data/
+browser_profile/
+.venv/
+__pycache__/
+tests/
+*.zip

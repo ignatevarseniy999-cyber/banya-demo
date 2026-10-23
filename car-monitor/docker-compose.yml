@@ -1,0 +1,15 @@
+services:
+  car-monitor:
+    build: .
+    container_name: car-monitor
+    env_file: .env
+    volumes:
+      - ./data:/app/data   # база объявлений и профиль браузера — переживают перезапуск
+    shm_size: 1gb          # Chromium падает с маленьким /dev/shm
+    init: true
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"

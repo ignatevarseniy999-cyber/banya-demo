@@ -59,6 +59,6 @@ def load_config() -> Config:
         db_path=ROOT / os.environ.get("DB_PATH", "data.db"),
         browser_headless=_flag("BROWSER_HEADLESS", False),
         browser_channel=os.environ.get("BROWSER_CHANNEL", "").strip(),
-        browser_profile=ROOT / "browser_profile",
+        browser_profile=ROOT / os.environ.get("BROWSER_PROFILE", "browser_profile"),
         proxy=os.environ.get("PROXY", "").strip(),
     )

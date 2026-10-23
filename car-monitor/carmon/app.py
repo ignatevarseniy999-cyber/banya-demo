@@ -279,7 +279,8 @@ class App:
                 updates = self.bot_tg.get_updates(offset)
             except TelegramError as exc:
                 if "Unauthorized" in str(exc) or "Not Found" in str(exc):
-                    log.error("Telegram отклонил токен бота — проверьте TELEGRAM_BOT_TOKEN")
+                    log.error("Telegram отклонил токен бота — проверьте TELEGRAM_BOT_TOKEN в .env")
+                    time.sleep(60)  # чтобы автоперезапуск в Docker не долбил Telegram
                     self.stop.set()
                     self.wake.set()
                     return
